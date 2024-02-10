@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   HttpCode,
-  HttpStatus,
   NotFoundException,
   Param,
   Post,
@@ -16,15 +15,13 @@ import { BlogsService } from '../application/blogs.service';
 import { PostsService } from '../../posts/application/posts.service';
 import { PostsQueryRepository } from '../../posts/infrastructure/posts.query-repository';
 import { BlogOutputModel } from './models/blog.output.model';
-import {
-  CreateAndUpdateBlogModel,
-  PaginatorBlogModel,
-} from './models/blog.input.model';
-import {
-  CreateAndUpdatePostModel,
-  PaginatorPostModel,
-} from '../../posts/api/models/post.input.model';
-import { PaginatorPostOutputModel } from '../../posts/api/models/post.output.model';
+import { CreateAndUpdateBlogModel } from './models/blog.input.model';
+import { CreateAndUpdatePostModel } from '../../posts/api/models/post.input.model';
+import { PostOutputModel } from '../../posts/api/models/post.output.model';
+import { PaginatorModel } from '../../../common/models/paginator.input.model';
+import { PaginatorOutputModel } from '../../../common/models/paginator.output.model';
+import { HTTP_STATUSES } from '../../../utils';
+import { ObjectIdPipe } from '../../../common/pipes/objectId.pipe';
 
 @Controller('blogs')
 export class BlogsController {
@@ -36,83 +33,69 @@ export class BlogsController {
   ) {}
 
   @Get()
-  async getAllBlogs(@Query() query: PaginatorBlogModel) {
-    const { searchNameTerm, sortBy, sortDirection, pageNumber, pageSize } =
-      query;
-
-    const blogs = await this.blogsQueryRepository.getAllBlogs({
-      searchNameTerm,
-      sortBy,
-      sortDirection,
-      pageNumber,
-      pageSize,
-    });
+  async getAllBlogs(
+    @Query() query: PaginatorModel,
+  ): Promise<PaginatorOutputModel<BlogOutputModel>> {
+    const blogs = await this.blogsQueryRepository.getAllBlogs(query);
 
     return blogs;
   }
   @Post()
-  @HttpCode(HttpStatus.CREATED)
+  @HttpCode(HTTP_STATUSES.CREATED_201)
   async createBlog(
     @Body() createModel: CreateAndUpdateBlogModel,
   ): Promise<BlogOutputModel> {
-    const { name, description, websiteUrl } = createModel;
-
-    const newBlog = await this.blogsService.createBlog({
-      name,
-      description,
-      websiteUrl,
-    });
+    const newBlog = await this.blogsService.createBlog(createModel);
 
     return newBlog;
   }
   @Get(':id/posts')
   async getPostsForBlog(
-    @Param('id') blogId: string,
-    @Query() query: PaginatorPostModel,
-  ): Promise<PaginatorPostOutputModel> {
-    const { pageNumber, pageSize, sortBy, sortDirection } = query;
-
+    @Param('id', ObjectIdPipe) blogId: string,
+    @Query() query: PaginatorModel,
+  ): Promise<PaginatorOutputModel<PostOutputModel>> {
     const blog = await this.blogsQueryRepository.getBlogById(blogId);
 
     if (!blog) {
       throw new NotFoundException('Blog not found');
     }
 
-    const posts = await this.postsQueryRepository.getPostsByBlogId({
-      pageNumber,
-      pageSize,
-      sortBy,
-      sortDirection,
+    const queryData: PaginatorModel & {
+      blogId: string;
+    } = {
+      ...query,
       blogId,
-    });
+    };
+
+    const posts = await this.postsQueryRepository.getPostsByBlogId(queryData);
 
     return posts;
   }
   @Post(':id/posts')
-  @HttpCode(HttpStatus.CREATED)
+  @HttpCode(HTTP_STATUSES.CREATED_201)
   async createPostForBlog(
-    @Param('id') blogId: string,
-    @Body() updateModel: CreateAndUpdatePostModel,
-  ) {
+    @Param('id', ObjectIdPipe) blogId: string,
+    @Body() createModel: CreateAndUpdatePostModel,
+  ): Promise<PostOutputModel> {
     const blog = await this.blogsQueryRepository.getBlogById(blogId);
 
     if (!blog) {
       throw new NotFoundException('Blog not found');
     }
 
-    const { title, shortDescription, content } = updateModel;
-
-    const post = await this.postsService.createPost({
-      title,
-      shortDescription,
-      content,
+    const createData: CreateAndUpdatePostModel = {
+      ...createModel,
       blogId,
-    });
+    };
+
+    const post = await this.postsService.createPost(createData);
 
     return post;
   }
   @Get(':id')
-  async getBlog(@Param('id') blogId: string): Promise<BlogOutputModel> {
+  async getBlog(
+    @Param('id', ObjectIdPipe) blogId: string,
+  ): Promise<BlogOutputModel> {
     const blog = await this.blogsQueryRepository.getBlogById(blogId);
 
     if (!blog) {
@@ -122,32 +105,26 @@ export class BlogsController {
     }
   }
   @Put(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async updateBlog(
-    @Param('id') blogId: string,
+    @Param('id', ObjectIdPipe) blogId: string,
     @Body() updateModel: CreateAndUpdateBlogModel,
   ) {
-    const { name, description, websiteUrl } = updateModel;
-
     const blog = await this.blogsQueryRepository.getBlogById(blogId);
 
     if (!blog) {
       throw new NotFoundException('Blog not found');
     }
 
-    const isUpdated = await this.blogsService.updateBlog(blogId, {
-      name,
-      description,
-      websiteUrl,
-    });
+    const isUpdated = await this.blogsService.updateBlog(blogId, updateModel);
 
     if (isUpdated) {
       return;
     }
   }
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteBlog(@Param('id') blogId: string) {
+  @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
+  async deleteBlog(@Param('id', ObjectIdPipe) blogId: string) {
     const isDeleted = await this.blogsService.deleteBlog(blogId);
 
     if (isDeleted) {

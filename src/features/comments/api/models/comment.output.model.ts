@@ -1,5 +1,19 @@
 import { CommentDocument } from '../../domain/comment.entity';
-
+import { ObjectId } from 'mongodb';
+export class CommentModel {
+  _id: ObjectId;
+  content: string;
+  commentatorInfo: {
+    userId: string;
+    userLogin: string;
+  };
+  createdAt: string;
+  likesInfo: {
+    likesCount: number;
+    dislikesCount: number;
+    myStatus: string;
+  };
+}
 export class CommentOutputModel {
   id: string;
   content: string;
@@ -15,26 +29,19 @@ export class CommentOutputModel {
   };
 }
 
-export type PaginatorCommentOutputModel = {
-  pagesCount: number;
-  page: number;
-  pageSize: number;
-  totalCount: number;
-  items: CommentOutputModel[];
-};
-
 export const commentMapper = (comment: CommentDocument): CommentOutputModel => {
-  const commentOutputModel = new CommentOutputModel();
-
-  commentOutputModel.id = comment._id.toString();
-  commentOutputModel.content = comment.content;
-  commentOutputModel.commentatorInfo.userId = comment.commentatorInfo.userId;
-  commentOutputModel.commentatorInfo.userLogin =
-    comment.commentatorInfo.userLogin;
-  commentOutputModel.createdAt = comment.createdAt;
-  commentOutputModel.likesInfo.likesCount = comment.likesInfo.likesCount;
-  commentOutputModel.likesInfo.dislikesCount = comment.likesInfo.dislikesCount;
-  commentOutputModel.likesInfo.myStatus = comment.likesInfo.myStatus;
-
-  return commentOutputModel;
+  return {
+    id: comment._id.toString(),
+    content: comment.content,
+    commentatorInfo: {
+      userId: comment.commentatorInfo.userId,
+      userLogin: comment.commentatorInfo.userLogin,
+    },
+    createdAt: comment.createdAt,
+    likesInfo: {
+      likesCount: comment.likesInfo.likesCount,
+      dislikesCount: comment.likesInfo.dislikesCount,
+      myStatus: comment.likesInfo.myStatus,
+    },
+  };
 };

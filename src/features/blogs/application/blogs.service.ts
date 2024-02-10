@@ -2,7 +2,8 @@ import { BlogsRepository } from '../infrastructure/blogs.repository';
 import { ObjectId } from 'mongodb';
 import { Blog, BlogOutputModel } from '../api/models/blog.output.model';
 import { CreateAndUpdateBlogModel } from '../api/models/blog.input.model';
-
+import { Injectable } from '@nestjs/common';
+@Injectable()
 export class BlogsService {
   constructor(protected blogsRepository: BlogsRepository) {}
   async createBlog(

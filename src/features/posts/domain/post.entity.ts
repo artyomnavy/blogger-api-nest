@@ -1,8 +1,8 @@
-import { PostType } from '../api/models/post.output.model';
 import { HydratedDocument } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { PostModel } from '../api/models/post.output.model';
 
-export type PostDocument = HydratedDocument<PostType>;
+export type PostDocument = HydratedDocument<PostModel>;
 
 @Schema()
 class NewestLikes {

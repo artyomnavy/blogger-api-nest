@@ -29,23 +29,13 @@ export class BlogOutputModel {
   isMembership: boolean;
 }
 
-export class PaginatorBlogOutputModel {
-  pagesCount: number;
-  page: number;
-  pageSize: number;
-  totalCount: number;
-  items: BlogOutputModel[];
-}
-
 export const blogMapper = (blog: BlogDocument): BlogOutputModel => {
-  const blogOutputModel = new BlogOutputModel();
-
-  blogOutputModel.id = blog._id.toString();
-  blogOutputModel.name = blog.name;
-  blogOutputModel.description = blog.description;
-  blogOutputModel.websiteUrl = blog.websiteUrl;
-  blogOutputModel.createdAt = blog.createdAt;
-  blogOutputModel.isMembership = blog.isMembership;
-
-  return blogOutputModel;
+  return {
+    id: blog._id.toString(),
+    name: blog.name,
+    description: blog.description,
+    websiteUrl: blog.websiteUrl,
+    createdAt: blog.createdAt,
+    isMembership: blog.isMembership,
+  };
 };

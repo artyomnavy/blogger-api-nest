@@ -1,8 +1,8 @@
-import { CommentType } from '../api/models/comment.output.model';
 import { HydratedDocument } from 'mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { CommentModel } from '../api/models/comment.output.model';
 
-export type CommentDocument = HydratedDocument<CommentType>;
+export type CommentDocument = HydratedDocument<CommentModel>;
 
 @Schema()
 class CommentatorInfo {

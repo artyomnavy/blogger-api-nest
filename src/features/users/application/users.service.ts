@@ -3,7 +3,8 @@ import { CreateUserModel } from '../api/models/user.input.model';
 import { UsersRepository } from '../infrastructure/users.repository';
 import { ObjectId } from 'mongodb';
 import bcrypt from 'bcrypt';
-
+import { Injectable } from '@nestjs/common';
+@Injectable()
 export class UsersService {
   constructor(protected usersRepository: UsersRepository) {}
 

@@ -1,31 +1,30 @@
 import { Injectable } from '@nestjs/common';
-import { PaginatorPostModel } from '../api/models/post.input.model';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostDocument } from '../domain/post.entity';
 import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
-import {
-  PaginatorPostOutputModel,
-  postMapper,
-  PostOutputModel,
-} from '../api/models/post.output.model';
+import { postMapper, PostOutputModel } from '../api/models/post.output.model';
+import { PaginatorModel } from '../../../common/models/paginator.input.model';
+import { PaginatorOutputModel } from '../../../common/models/paginator.output.model';
 
 @Injectable()
 export class PostsQueryRepository {
   constructor(@InjectModel(Post.name) private postModel: Model<PostDocument>) {}
   async getAllPosts(
-    QueryData: PaginatorPostModel,
-  ): Promise<PaginatorPostOutputModel> {
-    const pageNumber = QueryData.pageNumber ? QueryData.pageNumber : 1;
-    const pageSize = QueryData.pageSize ? QueryData.pageSize : 10;
-    const sortBy = QueryData.sortBy ? QueryData.sortBy : 'createdAt';
-    const sortDirection = QueryData.sortDirection
-      ? QueryData.sortDirection
+    queryData: PaginatorModel,
+  ): Promise<PaginatorOutputModel<PostOutputModel>> {
+    const pageNumber = queryData.pageNumber ? queryData.pageNumber : 1;
+    const pageSize = queryData.pageSize ? queryData.pageSize : 10;
+    const sortBy = queryData.sortBy ? queryData.sortBy : 'createdAt';
+    const sortDirection = queryData.sortDirection
+      ? queryData.sortDirection
       : 'desc';
 
     const posts = await this.postModel
       .find({})
-      .sort({ [sortBy]: sortDirection === 'desc' ? -1 : 1 })
+      .sort({
+        [sortBy]: sortDirection === 'desc' ? -1 : 1,
+      })
       .skip((+pageNumber - 1) * +pageSize)
       .limit(+pageSize);
 
@@ -54,17 +53,17 @@ export class PostsQueryRepository {
   }
 
   async getPostsByBlogId(
-    QueryData: PaginatorPostModel & {
+    queryData: PaginatorModel & {
       blogId: string;
     },
-  ): Promise<PaginatorPostOutputModel> {
-    const pageNumber = QueryData.pageNumber ? QueryData.pageNumber : 1;
-    const pageSize = QueryData.pageSize ? QueryData.pageSize : 10;
-    const sortBy = QueryData.sortBy ? QueryData.sortBy : 'createdAt';
-    const sortDirection = QueryData.sortDirection
-      ? QueryData.sortDirection
+  ): Promise<PaginatorOutputModel<PostOutputModel>> {
+    const pageNumber = queryData.pageNumber ? queryData.pageNumber : 1;
+    const pageSize = queryData.pageSize ? queryData.pageSize : 10;
+    const sortBy = queryData.sortBy ? queryData.sortBy : 'createdAt';
+    const sortDirection = queryData.sortDirection
+      ? queryData.sortDirection
       : 'desc';
-    const blogId = QueryData.blogId;
+    const blogId = queryData.blogId;
 
     const filter = {
       blogId: {
@@ -74,7 +73,9 @@ export class PostsQueryRepository {
 
     const posts = await this.postModel
       .find(filter)
-      .sort({ [sortBy]: sortDirection === 'desc' ? -1 : 1 })
+      .sort({
+        [sortBy]: sortDirection === 'desc' ? -1 : 1,
+      })
       .skip((+pageNumber - 1) * +pageSize)
       .limit(+pageSize);
 

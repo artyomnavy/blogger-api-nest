@@ -1,0 +1,357 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import { AppModule } from './../src/app.module';
+import { BlogOutputModel } from '../src/features/blogs/api/models/blog.output.model';
+import { PostOutputModel } from '../src/features/posts/api/models/post.output.model';
+import { HTTP_STATUSES, likesStatuses } from '../src/utils';
+import { appSettings } from '../src/app.settings';
+import { badId, Paths, responseNullData } from './test-utils';
+import { CreateAndUpdateBlogModel } from '../src/features/blogs/api/models/blog.input.model';
+import { CreateAndUpdatePostModel } from '../src/features/posts/api/models/post.input.model';
+import { entitiesTestManager } from './test-manager';
+
+describe('Blogs testing (e2e)', () => {
+  let app: INestApplication;
+  let server;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    appSettings(app);
+    await app.init();
+
+    server = app.getHttpServer();
+
+    await request(server)
+      .delete(`${Paths.testing}/all-data`)
+      .expect(HTTP_STATUSES.NO_CONTENT_204);
+  });
+
+  let newBlog: BlogOutputModel | null = null;
+  let newPost: PostOutputModel | null = null;
+
+  it('+ GET all blogs database', async () => {
+    const foundBlogs = await request(server)
+      .get(Paths.blogs)
+      .query({
+        searchNameTerm: '',
+        sortBy: '',
+        sortDirection: '',
+        pageNumber: '',
+        pageSize: '',
+      })
+      .expect(HTTP_STATUSES.OK_200);
+
+    expect(foundBlogs.body).toStrictEqual(responseNullData);
+  });
+
+  it('- POST does not create blog with incorrect name, description and websiteUrl)', async () => {
+    const createData = {
+      name: '',
+      description: '',
+      websiteUrl: '',
+    };
+
+    await entitiesTestManager.createBlog(
+      Paths.blogs,
+      createData,
+      server,
+      HTTP_STATUSES.BAD_REQUEST_400,
+    );
+
+    const foundBlogs = await request(server)
+      .get('/blogs')
+      .expect(HTTP_STATUSES.OK_200);
+
+    expect(foundBlogs.body).toStrictEqual(responseNullData);
+  });
+
+  it('+ POST create blog with correct data)', async () => {
+    const createData: CreateAndUpdateBlogModel = {
+      name: 'New blog 1',
+      description: 'New description 1',
+      websiteUrl: 'https://website1.com',
+    };
+
+    const createBlog = await entitiesTestManager.createBlog(
+      Paths.blogs,
+      createData,
+      server,
+    );
+
+    newBlog = createBlog.body;
+
+    expect(newBlog).toEqual({
+      id: expect.any(String),
+      name: createData.name,
+      description: createData.description,
+      websiteUrl: createData.websiteUrl,
+      createdAt: expect.any(String),
+      isMembership: false,
+    });
+
+    const foundBlogs = await request(server)
+      .get(Paths.blogs)
+      .query({
+        searchNameTerm: '',
+        sortBy: '',
+        sortDirection: '',
+        pageNumber: '',
+        pageSize: '',
+      })
+      .expect(HTTP_STATUSES.OK_200);
+
+    expect(foundBlogs.body).toStrictEqual({
+      pagesCount: 1,
+      page: 1,
+      pageSize: 10,
+      totalCount: 1,
+      items: [newBlog],
+    });
+  });
+
+  it('- GET all posts by incorrect blogId', async () => {
+    await request(server)
+      .get(`${Paths.blogs}/${badId}/posts`)
+      .query({
+        pageNumber: '',
+        pageSize: '',
+        sortBy: '',
+        sortDirection: '',
+      })
+      .expect(HTTP_STATUSES.NOT_FOUND_404);
+  });
+
+  it('+ GET all posts with correct blogId for blog', async () => {
+    const foundPosts = await request(server)
+      .get(`${Paths.blogs}/${newBlog!.id}/posts`)
+      .query({
+        pageNumber: '',
+        pageSize: '',
+        sortBy: '',
+        sortDirection: '',
+      })
+      .expect(HTTP_STATUSES.OK_200);
+
+    expect(foundPosts.body).toStrictEqual(responseNullData);
+  });
+
+  it('- POST does not create post with incorrect data for correct blogId)', async () => {
+    const createData = {
+      title: '',
+      shortDescription: '',
+      content: '',
+    };
+
+    await entitiesTestManager.createPostForBlog(
+      `${Paths.blogs}/${newBlog!.id}/posts`,
+      createData,
+      server,
+      HTTP_STATUSES.BAD_REQUEST_400,
+    );
+
+    const foundPosts = await request(server)
+      .get(Paths.posts)
+      .expect(HTTP_STATUSES.OK_200);
+
+    expect(foundPosts.body).toStrictEqual(responseNullData);
+
+    const foundBlog = await request(server)
+      .get(`${Paths.blogs}/${newBlog!.id}`)
+      .expect(HTTP_STATUSES.OK_200);
+
+    expect(foundBlog.body).toStrictEqual(newBlog);
+  });
+
+  it('- POST does not create post with correct data for incorrect blogId)', async () => {
+    const createData: CreateAndUpdatePostModel = {
+      title: 'New post 1',
+      shortDescription: 'New shortDescription 1',
+      content: 'New content 1',
+    };
+
+    await entitiesTestManager.createPostForBlog(
+      `${Paths.blogs}/${badId}/posts`,
+      createData,
+      server,
+      HTTP_STATUSES.NOT_FOUND_404,
+    );
+
+    const foundPosts = await request(server)
+      .get(Paths.posts)
+      .expect(HTTP_STATUSES.OK_200);
+
+    expect(foundPosts.body).toStrictEqual(responseNullData);
+  });
+
+  it('+ POST create post with correct data for correct blogId)', async () => {
+    const createData: CreateAndUpdatePostModel = {
+      title: 'New post 1',
+      shortDescription: 'New shortDescription 1',
+      content: 'New content 1',
+    };
+
+    const createPost = await entitiesTestManager.createPostForBlog(
+      `${Paths.blogs}/${newBlog!.id}/posts`,
+      createData,
+      server,
+    );
+
+    newPost = createPost.body;
+
+    expect(newPost).toEqual({
+      id: expect.any(String),
+      title: createData.title,
+      shortDescription: createData.shortDescription,
+      content: createData.content,
+      blogId: expect.any(String),
+      blogName: expect.any(String),
+      createdAt: expect.any(String),
+      extendedLikesInfo: {
+        likesCount: 0,
+        dislikesCount: 0,
+        myStatus: likesStatuses.none,
+        newestLikes: [],
+      },
+    });
+
+    const foundPosts = await request(server)
+      .get(Paths.posts)
+      .expect(HTTP_STATUSES.OK_200);
+
+    expect(foundPosts.body).toStrictEqual({
+      pagesCount: 1,
+      page: 1,
+      pageSize: 10,
+      totalCount: 1,
+      items: [newPost],
+    });
+  });
+
+  it('- GET blog by ID with incorrect id', async () => {
+    await request(server)
+      .get(`${Paths.blogs}/${badId}`)
+      .expect(HTTP_STATUSES.NOT_FOUND_404);
+  });
+
+  it('+ GET blog by ID with correct id', async () => {
+    const foundBlog = await request(server)
+      .get(`${Paths.blogs}/${newBlog!.id}`)
+      .expect(HTTP_STATUSES.OK_200);
+
+    expect(foundBlog.body).toStrictEqual(newBlog);
+  });
+
+  it('- PUT blog by ID with incorrect id', async () => {
+    const updateData = {
+      name: 'Bad name',
+      description: 'Bad description',
+      websiteUrl: 'https://badwebsite.com',
+    };
+
+    await request(server)
+      .put(`${Paths.blogs}/${badId}`)
+      .send(updateData)
+      .expect(HTTP_STATUSES.NOT_FOUND_404);
+
+    const foundBlogs = await request(server)
+      .get(Paths.blogs)
+      .expect(HTTP_STATUSES.OK_200);
+
+    expect(foundBlogs.body).toStrictEqual({
+      pagesCount: 1,
+      page: 1,
+      pageSize: 10,
+      totalCount: 1,
+      items: [newBlog],
+    });
+  });
+
+  it('- PUT blog by ID with incorrect data', async () => {
+    const updateData = { name: '', description: '', websiteUrl: 'bad' };
+
+    await request(server)
+      .put(`${Paths.blogs}/${newBlog!.id}`)
+      .send(updateData)
+      .expect(HTTP_STATUSES.BAD_REQUEST_400);
+
+    const foundBlogs = await request(server)
+      .get(Paths.blogs)
+      .expect(HTTP_STATUSES.OK_200);
+
+    expect(foundBlogs.body).toStrictEqual({
+      pagesCount: 1,
+      page: 1,
+      pageSize: 10,
+      totalCount: 1,
+      items: [newBlog],
+    });
+  });
+
+  it('+ PUT blog by ID with correct data', async () => {
+    const updateData: CreateAndUpdateBlogModel = {
+      name: 'New blog 2',
+      description: 'New description 2',
+      websiteUrl: 'https://website2.com',
+    };
+
+    await request(server)
+      .put(`${Paths.blogs}/${newBlog!.id}`)
+      .send(updateData)
+      .expect(HTTP_STATUSES.NO_CONTENT_204);
+
+    const foundBlogs = await request(server)
+      .get(Paths.blogs)
+      .expect(HTTP_STATUSES.OK_200);
+
+    expect(foundBlogs.body.items[0]).toEqual({
+      ...newBlog,
+      name: updateData.name,
+      description: updateData.description,
+      websiteUrl: updateData.websiteUrl,
+    });
+
+    newBlog = foundBlogs.body.items[0];
+  });
+
+  it('- DELETE blog by ID with incorrect id', async () => {
+    await request(server)
+      .delete(`${Paths.blogs}/${badId}`)
+      .expect(HTTP_STATUSES.NOT_FOUND_404);
+
+    const foundBlogs = await request(server)
+      .get(Paths.blogs)
+      .expect(HTTP_STATUSES.OK_200);
+
+    expect(foundBlogs.body).toStrictEqual({
+      pagesCount: 1,
+      page: 1,
+      pageSize: 10,
+      totalCount: 1,
+      items: [newBlog],
+    });
+  });
+
+  it('+ DELETE blog by ID with correct id', async () => {
+    await request(server)
+      .delete(`${Paths.blogs}/${newBlog!.id}`)
+      .expect(HTTP_STATUSES.NO_CONTENT_204);
+
+    const foundBlogs = await request(server)
+      .get(Paths.blogs)
+      .expect(HTTP_STATUSES.OK_200);
+
+    expect(foundBlogs.body).toStrictEqual(responseNullData);
+  });
+
+  afterAll(async () => {
+    await request(server)
+      .delete(`${Paths.testing}/all-data`)
+      .expect(HTTP_STATUSES.NO_CONTENT_204);
+    await server.close();
+  });
+});

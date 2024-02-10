@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   HttpCode,
-  HttpStatus,
   NotFoundException,
   Param,
   Post,
@@ -12,8 +11,12 @@ import {
 } from '@nestjs/common';
 import { UsersService } from '../application/users.service';
 import { UsersQueryRepository } from '../infrastructure/users.query-repository';
-import { CreateUserModel, PaginatorUserModel } from './models/user.input.model';
-import { PaginatorUserOutputModel } from './models/user.output.model';
+import { CreateUserModel } from './models/user.input.model';
+import { PaginatorModel } from '../../../common/models/paginator.input.model';
+import { PaginatorOutputModel } from '../../../common/models/paginator.output.model';
+import { UserOutputModel } from './models/user.output.model';
+import { HTTP_STATUSES } from '../../../utils';
+import { ObjectIdPipe } from '../../../common/pipes/objectId.pipe';
 
 @Controller('users')
 export class UsersController {
@@ -23,44 +26,24 @@ export class UsersController {
   ) {}
   @Get()
   async getAllUsers(
-    @Query() query: PaginatorUserModel,
-  ): Promise<PaginatorUserOutputModel> {
-    const {
-      sortBy,
-      sortDirection,
-      pageNumber,
-      pageSize,
-      searchLoginTerm,
-      searchEmailTerm,
-    } = query;
-
-    const users = await this.usersQueryRepository.getAllUsers({
-      sortBy,
-      sortDirection,
-      pageNumber,
-      pageSize,
-      searchLoginTerm,
-      searchEmailTerm,
-    });
+    @Query() query: PaginatorModel,
+  ): Promise<PaginatorOutputModel<UserOutputModel>> {
+    const users = await this.usersQueryRepository.getAllUsers(query);
 
     return users;
   }
   @Post()
-  @HttpCode(HttpStatus.CREATED)
-  async createUserByAdmin(@Body() createModel: CreateUserModel) {
-    const { login, password, email } = createModel;
-
-    const newUser = await this.usersService.createUserByAdmin({
-      login,
-      password,
-      email,
-    });
+  @HttpCode(HTTP_STATUSES.CREATED_201)
+  async createUserByAdmin(
+    @Body() createModel: CreateUserModel,
+  ): Promise<UserOutputModel> {
+    const newUser = await this.usersService.createUserByAdmin(createModel);
 
     return newUser;
   }
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteUser(@Param('id') userId: string) {
+  @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
+  async deleteUser(@Param('id', ObjectIdPipe) userId: string) {
     const isDeleted = await this.usersService.deleteUser(userId);
 
     if (isDeleted) {

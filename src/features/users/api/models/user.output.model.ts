@@ -8,14 +8,6 @@ export class UserOutputModel {
   createdAt: string;
 }
 
-export class PaginatorUserOutputModel {
-  pagesCount: number;
-  page: number;
-  pageSize: number;
-  totalCount: number;
-  items: UserOutputModel[];
-}
-
 export class UserModel {
   login: string;
   password: string;
@@ -44,12 +36,10 @@ export class User {
 }
 
 export const userMapper = (user: UserDocument): UserOutputModel => {
-  const userOutputModel = new UserOutputModel();
-
-  userOutputModel.id = user._id.toString();
-  userOutputModel.login = user.accountData.login;
-  userOutputModel.email = user.accountData.email;
-  userOutputModel.createdAt = user.accountData.createdAt;
-
-  return userOutputModel;
+  return {
+    id: user._id.toString(),
+    login: user.accountData.login,
+    email: user.accountData.email,
+    createdAt: user.accountData.createdAt,
+  };
 };

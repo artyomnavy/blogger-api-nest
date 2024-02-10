@@ -3,28 +3,25 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Blog, BlogDocument } from '../domain/blog.entity';
 import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
-import {
-  blogMapper,
-  BlogOutputModel,
-  PaginatorBlogOutputModel,
-} from '../api/models/blog.output.model';
-import { PaginatorBlogModel } from '../api/models/blog.input.model';
+import { blogMapper, BlogOutputModel } from '../api/models/blog.output.model';
+import { PaginatorModel } from '../../../common/models/paginator.input.model';
+import { PaginatorOutputModel } from '../../../common/models/paginator.output.model';
 
 @Injectable()
 export class BlogsQueryRepository {
   constructor(@InjectModel(Blog.name) private blogModel: Model<BlogDocument>) {}
   async getAllBlogs(
-    QueryData: PaginatorBlogModel,
-  ): Promise<PaginatorBlogOutputModel> {
-    const searchNameTerm = QueryData.searchNameTerm
-      ? QueryData.searchNameTerm
+    queryData: PaginatorModel,
+  ): Promise<PaginatorOutputModel<BlogOutputModel>> {
+    const searchNameTerm = queryData.searchNameTerm
+      ? queryData.searchNameTerm
       : null;
-    const sortBy = QueryData.sortBy ? QueryData.sortBy : 'createdAt';
-    const sortDirection = QueryData.sortDirection
-      ? QueryData.sortDirection
+    const sortBy = queryData.sortBy ? queryData.sortBy : 'createdAt';
+    const sortDirection = queryData.sortDirection
+      ? queryData.sortDirection
       : 'desc';
-    const pageNumber = QueryData.pageNumber ? QueryData.pageNumber : 1;
-    const pageSize = QueryData.pageSize ? QueryData.pageSize : 10;
+    const pageNumber = queryData.pageNumber ? queryData.pageNumber : 1;
+    const pageSize = queryData.pageSize ? queryData.pageSize : 10;
 
     let filter = {};
 
@@ -39,7 +36,9 @@ export class BlogsQueryRepository {
 
     const blogs = await this.blogModel
       .find(filter)
-      .sort({ [sortBy]: sortDirection === 'desc' ? -1 : 1 })
+      .sort({
+        [sortBy]: sortDirection === 'desc' ? -1 : 1,
+      })
       .skip((+pageNumber - 1) * +pageSize)
       .limit(+pageSize);
 

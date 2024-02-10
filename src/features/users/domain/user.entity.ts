@@ -21,10 +21,10 @@ class AccountData {
 
 @Schema()
 class EmailConfirmation {
-  @Prop({ required: true })
+  @Prop()
   confirmationCode: string;
 
-  @Prop({ required: true })
+  @Prop()
   expirationDate: string;
 
   @Prop({ required: true })
