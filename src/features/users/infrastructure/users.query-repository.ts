@@ -30,7 +30,7 @@ export class UsersQueryRepository {
 
     if (searchLoginTerm) {
       filterLogin = {
-        login: {
+        'accountData.login': {
           $regex: searchLoginTerm,
           $options: 'i',
         },
@@ -39,7 +39,7 @@ export class UsersQueryRepository {
 
     if (searchEmailTerm) {
       filterEmail = {
-        email: {
+        'accountData.email': {
           $regex: searchEmailTerm,
           $options: 'i',
         },
