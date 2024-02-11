@@ -13,7 +13,7 @@ export class UsersQueryRepository {
     queryData: PaginatorModel,
   ): Promise<PaginatorOutputModel<UserOutputModel>> {
     const sortBy = queryData.sortBy
-      ? queryData.sortBy
+      ? `accountData.${queryData.sortBy}`
       : 'accountData.createdAt';
     const sortDirection = queryData.sortDirection
       ? queryData.sortDirection
