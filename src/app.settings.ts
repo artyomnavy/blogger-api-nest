@@ -1,6 +1,11 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  INestApplication,
+  ValidationPipe,
+} from '@nestjs/common';
 import { useContainer } from 'class-validator';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/exeption-filters/http-exeption.filter';
 
 export const appSettings = (app: INestApplication) => {
   app.enableCors();
@@ -9,6 +14,21 @@ export const appSettings = (app: INestApplication) => {
     new ValidationPipe({
       transform: true,
       stopAtFirstError: true,
-    }),
+      exceptionFactory: (errors) => {
+        const errorsForResponse: { message: string; field: string }[] = [];
+
+        errors.forEach((e) => {
+          const constraintKeys = Object.keys(e.constraints);
+          constraintKeys.forEach((cKey) => {
+            errorsForResponse.push({
+              message: e.constraints[cKey],
+              field: e.property,
+            });
+          });
+        });
+        throw new BadRequestException(errorsForResponse);
+      },
+    } as object),
   );
+  app.useGlobalFilters(new HttpExceptionFilter());
 };
