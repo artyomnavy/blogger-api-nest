@@ -12,7 +12,9 @@ export class UsersQueryRepository {
   async getAllUsers(
     queryData: PaginatorModel,
   ): Promise<PaginatorOutputModel<UserOutputModel>> {
-    const sortBy = queryData.sortBy ? queryData.sortBy : 'createdAt';
+    const sortBy = queryData.sortBy
+      ? queryData.sortBy
+      : 'accountData.createdAt';
     const sortDirection = queryData.sortDirection
       ? queryData.sortDirection
       : 'desc';
@@ -52,6 +54,7 @@ export class UsersQueryRepository {
 
     const users = await this.userModel
       .find(filter)
+      .lean()
       .sort({
         [sortBy]: sortDirection === 'desc' ? -1 : 1,
       })
