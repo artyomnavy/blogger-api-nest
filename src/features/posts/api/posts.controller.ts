@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { PostsService } from '../application/posts.service';
 import { PostsQueryRepository } from '../infrastructure/posts.query-repository';
@@ -20,6 +21,7 @@ import { PaginatorOutputModel } from '../../../common/models/paginator.output.mo
 import { CommentOutputModel } from '../../comments/api/models/comment.output.model';
 import { HTTP_STATUSES } from '../../../utils';
 import { ObjectIdPipe } from '../../../common/pipes/objectId.pipe';
+import { AuthBasicGuard } from '../../../common/guards/auth-basic.guard';
 
 @Controller('posts')
 export class PostsController {
@@ -58,6 +60,7 @@ export class PostsController {
     return posts;
   }
   @Post()
+  @UseGuards(AuthBasicGuard)
   @HttpCode(HTTP_STATUSES.CREATED_201)
   async createPost(
     @Body() createModel: CreateAndUpdatePostModel,
@@ -79,6 +82,7 @@ export class PostsController {
     }
   }
   @Put(':id')
+  @UseGuards(AuthBasicGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async updatePost(
     @Param('id', ObjectIdPipe) postId: string,
@@ -97,6 +101,7 @@ export class PostsController {
     }
   }
   @Delete(':id')
+  @UseGuards(AuthBasicGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async deletePost(@Param('id', ObjectIdPipe) postId: string) {
     const isDeleted = await this.postsService.deletePost(postId);

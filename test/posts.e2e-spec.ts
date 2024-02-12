@@ -6,7 +6,7 @@ import { PostOutputModel } from '../src/features/posts/api/models/post.output.mo
 import { BlogOutputModel } from '../src/features/blogs/api/models/blog.output.model';
 import { HTTP_STATUSES, likesStatuses } from '../src/utils';
 import { appSettings } from '../src/app.settings';
-import { badId, Paths, responseNullData } from './test-utils';
+import { badId, login, password, Paths, responseNullData } from './test-utils';
 import { entitiesTestManager } from './test-manager';
 
 describe('Posts testing (e2e)', () => {
@@ -40,6 +40,30 @@ describe('Posts testing (e2e)', () => {
     expect(foundPosts.body).toStrictEqual(responseNullData);
   });
 
+  it('- POST does not create post with incorrect login and password)', async () => {
+    const createData = {
+      title: 'new title',
+      shortDescription: 'new shortDescription',
+      content: 'new content',
+      blogId: `${badId}`,
+    };
+
+    await entitiesTestManager.createPost(
+      Paths.posts,
+      createData,
+      'wrongLogin',
+      'wrongpass',
+      server,
+      HTTP_STATUSES.UNAUTHORIZED_401,
+    );
+
+    const foundPosts = await request(server)
+      .get(Paths.posts)
+      .expect(HTTP_STATUSES.OK_200);
+
+    expect(foundPosts.body).toStrictEqual(responseNullData);
+  });
+
   it('- POST does not create post with incorrect title, shortDescription, content and blogId)', async () => {
     const createData = {
       title: '',
@@ -48,12 +72,23 @@ describe('Posts testing (e2e)', () => {
       blogId: `1`,
     };
 
-    await entitiesTestManager.createPost(
+    const errorsCreatePost = await entitiesTestManager.createPost(
       Paths.posts,
       createData,
+      login,
+      password,
       server,
       HTTP_STATUSES.BAD_REQUEST_400,
     );
+
+    expect(errorsCreatePost.body).toStrictEqual({
+      errorsMessages: [
+        { message: expect.any(String), field: 'title' },
+        { message: expect.any(String), field: 'shortDescription' },
+        { message: expect.any(String), field: 'content' },
+        { message: expect.any(String), field: 'blogId' },
+      ],
+    });
 
     const foundPosts = await request(server)
       .get(Paths.posts)
@@ -72,6 +107,8 @@ describe('Posts testing (e2e)', () => {
     const createBlog = await entitiesTestManager.createBlog(
       Paths.blogs,
       createData,
+      login,
+      password,
       server,
     );
 
@@ -110,6 +147,8 @@ describe('Posts testing (e2e)', () => {
     const createPost = await entitiesTestManager.createPost(
       Paths.posts,
       createData,
+      login,
+      password,
       server,
     );
 
@@ -168,6 +207,7 @@ describe('Posts testing (e2e)', () => {
 
     await request(server)
       .put(`${Paths.posts}/${badId}`)
+      .auth(login, password)
       .send(updateData)
       .expect(HTTP_STATUSES.NOT_FOUND_404);
 
@@ -192,10 +232,20 @@ describe('Posts testing (e2e)', () => {
       blogId: '',
     };
 
-    await request(server)
+    const errorsUpdatePost = await request(server)
       .put(`${Paths.posts}/${newPost!.id}`)
+      .auth(login, password)
       .send(updateData)
       .expect(HTTP_STATUSES.BAD_REQUEST_400);
+
+    expect(errorsUpdatePost.body).toStrictEqual({
+      errorsMessages: [
+        { message: expect.any(String), field: 'title' },
+        { message: expect.any(String), field: 'shortDescription' },
+        { message: expect.any(String), field: 'content' },
+        { message: expect.any(String), field: 'blogId' },
+      ],
+    });
 
     const foundPosts = await request(server)
       .get(Paths.posts)
@@ -220,6 +270,7 @@ describe('Posts testing (e2e)', () => {
 
     await request(server)
       .put(`${Paths.posts}/${newPost!.id}`)
+      .auth(login, password)
       .send(updateData)
       .expect(HTTP_STATUSES.NO_CONTENT_204);
 
@@ -239,6 +290,7 @@ describe('Posts testing (e2e)', () => {
   it('- DELETE post by ID with incorrect id', async () => {
     await request(server)
       .delete(`${Paths.posts}/${badId}`)
+      .auth(login, password)
       .expect(HTTP_STATUSES.NOT_FOUND_404);
 
     const foundPosts = await request(server)
@@ -257,6 +309,7 @@ describe('Posts testing (e2e)', () => {
   it('+ DELETE post by ID with correct id', async () => {
     await request(server)
       .delete(`${Paths.posts}/${newPost!.id}`)
+      .auth(login, password)
       .expect(HTTP_STATUSES.NO_CONTENT_204);
 
     const foundPosts = await request(server)

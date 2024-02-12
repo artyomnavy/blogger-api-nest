@@ -8,11 +8,14 @@ export const entitiesTestManager = {
   async createBlog(
     uri: string,
     createData: CreateAndUpdateBlogModel,
+    login: string,
+    password: string,
     server: any,
     statusCode: HttpStatusType = HTTP_STATUSES.CREATED_201,
   ) {
     const response = await request(server)
       .post(uri)
+      .auth(login, password)
       .send(createData)
       .expect(statusCode);
 
@@ -21,11 +24,14 @@ export const entitiesTestManager = {
   async createPostForBlog(
     uri: string,
     createData: CreateAndUpdatePostModel,
+    login: string,
+    password: string,
     server: any,
     statusCode: HttpStatusType = HTTP_STATUSES.CREATED_201,
   ) {
     const response = await request(server)
       .post(uri)
+      .auth(login, password)
       .send(createData)
       .expect(statusCode);
 
@@ -34,11 +40,14 @@ export const entitiesTestManager = {
   async createPost(
     uri: string,
     createData: CreateAndUpdatePostModel,
+    login: string,
+    password: string,
     server: any,
     statusCode: HttpStatusType = HTTP_STATUSES.CREATED_201,
   ) {
     const response = await request(server)
       .post(uri)
+      .auth(login, password)
       .send(createData)
       .expect(statusCode);
 
@@ -47,11 +56,14 @@ export const entitiesTestManager = {
   async createUserByAdmin(
     uri: string,
     createData: CreateUserModel,
+    login: string,
+    password: string,
     server: any,
     statusCode: HttpStatusType = HTTP_STATUSES.CREATED_201,
   ) {
     const response = await request(server)
       .post(uri)
+      .auth(login, password)
       .send(createData)
       .expect(statusCode);
 

@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { useContainer } from 'class-validator';
 import { AppModule } from './app.module';
-import { HttpExceptionFilter } from './common/exeption-filters/http-exeption.filter';
+import { HttpExceptionFilter } from './common/exeption-filters/http-exeption-filter';
 
 export const appSettings = (app: INestApplication) => {
   app.enableCors();

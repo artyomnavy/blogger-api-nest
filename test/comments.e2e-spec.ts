@@ -6,7 +6,7 @@ import { HTTP_STATUSES, likesStatuses } from '../src/utils';
 import { BlogOutputModel } from '../src/features/blogs/api/models/blog.output.model';
 import { PostOutputModel } from '../src/features/posts/api/models/post.output.model';
 import { appSettings } from '../src/app.settings';
-import { badId, Paths, responseNullData } from './test-utils';
+import { badId, login, password, Paths, responseNullData } from './test-utils';
 import { entitiesTestManager } from './test-manager';
 
 describe('Comments testing (e2e)', () => {
@@ -43,6 +43,8 @@ describe('Comments testing (e2e)', () => {
     const createBlog = await entitiesTestManager.createBlog(
       Paths.blogs,
       createData,
+      login,
+      password,
       server,
     );
 
@@ -82,6 +84,8 @@ describe('Comments testing (e2e)', () => {
     const createPost = await entitiesTestManager.createPost(
       Paths.posts,
       createData,
+      login,
+      password,
       server,
     );
 
