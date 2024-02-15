@@ -1,10 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { userMapper, UserOutputModel } from '../api/models/user.output.model';
+import {
+  UserAccountModel,
+  userMapper,
+  UserOutputModel,
+} from '../api/models/user.output.model';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from '../domain/user.entity';
 import { Model } from 'mongoose';
 import { PaginatorModel } from '../../../common/models/paginator.input.model';
 import { PaginatorOutputModel } from '../../../common/models/paginator.output.model';
+import { PasswordRecoveryModel } from '../../auth/api/models/auth.input.model';
+import bcrypt from 'bcrypt';
+import { ObjectId } from 'mongodb';
+import { AuthMeOutputModel } from '../../auth/api/models/auth.output.model';
 
 @Injectable()
 export class UsersQueryRepository {
@@ -82,13 +90,80 @@ export class UsersQueryRepository {
       return userMapper(user);
     }
   }
-  async getUserByEmail(email: string): Promise<UserOutputModel | null> {
+  async getUserByEmail(email: string): Promise<UserAccountModel | null> {
     const user = await this.userModel.findOne({ 'accountData.email': email });
 
     if (!user) {
       return null;
     } else {
+      return user;
+    }
+  }
+  async getUserByLoginOrEmail(
+    loginOrEmail: string,
+  ): Promise<UserAccountModel | null> {
+    const filter = {
+      $or: [
+        { 'accountData.login': loginOrEmail },
+        { 'accountData.email': loginOrEmail },
+      ],
+    };
+
+    const user = await this.userModel.findOne(filter);
+
+    if (!user) {
+      return null;
+    } else {
+      return user;
+    }
+  }
+  async getUserByConfirmationCode(
+    code: string,
+  ): Promise<UserAccountModel | null> {
+    const user = await this.userModel.findOne({
+      'emailConfirmation.confirmationCode': code,
+    });
+
+    if (!user) {
+      return null;
+    } else {
+      return user;
+    }
+  }
+  async checkUserPasswordForRecovery(
+    recoveryCode: string,
+    newPassword: string,
+  ): Promise<boolean> {
+    const user = await this.userModel.findOne({
+      'emailConfirmation.confirmationCode': recoveryCode,
+    });
+
+    if (!user) {
+      return false;
+    } else {
+      return await bcrypt.compare(newPassword, user.accountData.password);
+    }
+  }
+  async getUserById(id: string): Promise<UserOutputModel | null> {
+    const user = await this.userModel.findOne({ _id: new ObjectId(id) });
+
+    if (!user) {
+      return null;
+    } else {
       return userMapper(user);
+    }
+  }
+  async getUserByIdForAuthMe(id: string): Promise<AuthMeOutputModel | null> {
+    const user = await this.userModel.findOne({ _id: new ObjectId(id) }).lean();
+
+    if (!user) {
+      return null;
+    } else {
+      return {
+        email: user.accountData.email,
+        login: user.accountData.login,
+        userId: user._id.toString(),
+      };
     }
   }
 }

@@ -34,7 +34,7 @@ export class Comment {
   commentatorInfo: CommentatorInfo;
 
   @Prop({ required: true })
-  createdAt: string;
+  createdAt: Date;
 
   @Prop({ required: true })
   postId: string;

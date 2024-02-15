@@ -19,7 +19,7 @@ export class LoginExistConstraint implements ValidatorConstraintInterface {
       return true;
     }
 
-    return false;
+    throw new Error('Login already exist');
   }
 }
 
@@ -47,7 +47,7 @@ export class EmailExistConstraint implements ValidatorConstraintInterface {
       return true;
     }
 
-    return false;
+    throw new Error('Email already exist');
   }
 }
 
@@ -59,6 +59,109 @@ export function IsEmailExist(validationOptions?: ValidationOptions) {
       options: validationOptions,
       constraints: [],
       validator: EmailExistConstraint,
+    });
+  };
+}
+
+@ValidatorConstraint({ name: 'CheckRecoveryCodeConfirmation', async: true })
+@Injectable()
+export class RecoveryCodeConstraint implements ValidatorConstraintInterface {
+  constructor(private readonly usersQueryRepository: UsersQueryRepository) {}
+
+  async validate(recoveryCode: string): Promise<boolean> {
+    const user =
+      await this.usersQueryRepository.getUserByConfirmationCode(recoveryCode);
+
+    if (!user) throw new Error('Recovery code is not exist');
+
+    if (
+      user.emailConfirmation.expirationDate !== null &&
+      user.emailConfirmation.expirationDate < new Date()
+    )
+      throw new Error('Recovery code expired');
+
+    return true;
+  }
+}
+
+export function CheckRecoveryCodeConfirmation(
+  validationOptions?: ValidationOptions,
+) {
+  return function (object: any, propertyName: string) {
+    registerDecorator({
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      constraints: [],
+      validator: RecoveryCodeConstraint,
+    });
+  };
+}
+
+@ValidatorConstraint({ name: 'CheckCodeConfirmation', async: true })
+@Injectable()
+export class CodeConfirmationConstraint
+  implements ValidatorConstraintInterface
+{
+  constructor(private readonly usersQueryRepository: UsersQueryRepository) {}
+
+  async validate(code: string): Promise<boolean> {
+    const user =
+      await this.usersQueryRepository.getUserByConfirmationCode(code);
+
+    if (!user) throw new Error('Code is not exist');
+    if (user.emailConfirmation.isConfirmed)
+      throw new Error('Code already been applied');
+    if (
+      user.emailConfirmation.expirationDate !== null &&
+      user.emailConfirmation.expirationDate < new Date()
+    )
+      throw new Error('Code expired');
+
+    return true;
+  }
+}
+
+export function CheckCodeConfirmation(validationOptions?: ValidationOptions) {
+  return function (object: any, propertyName: string) {
+    registerDecorator({
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      constraints: [],
+      validator: CodeConfirmationConstraint,
+    });
+  };
+}
+
+@ValidatorConstraint({ name: 'IsEmailExistAndConfirmed', async: true })
+@Injectable()
+export class EmailExistAndConfirmedConstraint
+  implements ValidatorConstraintInterface
+{
+  constructor(private readonly usersQueryRepository: UsersQueryRepository) {}
+
+  async validate(email: string): Promise<boolean> {
+    const user = await this.usersQueryRepository.getUserByEmail(email);
+
+    if (!user) throw new Error('Email is not exist');
+    if (user!.emailConfirmation.isConfirmed)
+      throw new Error('Email is already confirmed');
+
+    return true;
+  }
+}
+
+export function IsEmailExistAndConfirmed(
+  validationOptions?: ValidationOptions,
+) {
+  return function (object: any, propertyName: string) {
+    registerDecorator({
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      constraints: [],
+      validator: EmailExistAndConfirmedConstraint,
     });
   };
 }

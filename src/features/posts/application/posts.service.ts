@@ -25,7 +25,7 @@ export class PostsService {
       createData.content,
       createData.blogId!,
       blog!.name,
-      new Date().toISOString(),
+      new Date(),
       {
         likesCount: 0,
         dislikesCount: 0,

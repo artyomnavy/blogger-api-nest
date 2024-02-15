@@ -11,7 +11,7 @@ const login = process.env.BASIC_AUTH_LOGIN || 'admin';
 const password = process.env.BASIC_AUTH_PASSWORD || 'qwerty';
 
 @Injectable()
-export class AuthBasicGuard implements CanActivate {
+export class BasicAuthGuard implements CanActivate {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {

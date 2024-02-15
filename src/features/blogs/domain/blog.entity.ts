@@ -16,7 +16,7 @@ export class Blog {
   websiteUrl: string;
 
   @Prop({ required: true })
-  createdAt: string;
+  createdAt: Date;
 
   @Prop({ required: true })
   isMembership: boolean;

@@ -7,7 +7,7 @@ export class CommentModel {
     userId: string;
     userLogin: string;
   };
-  createdAt: string;
+  createdAt: Date;
   likesInfo: {
     likesCount: number;
     dislikesCount: number;
@@ -37,7 +37,7 @@ export const commentMapper = (comment: CommentDocument): CommentOutputModel => {
       userId: comment.commentatorInfo.userId,
       userLogin: comment.commentatorInfo.userLogin,
     },
-    createdAt: comment.createdAt,
+    createdAt: comment.createdAt.toISOString(),
     likesInfo: {
       likesCount: comment.likesInfo.likesCount,
       dislikesCount: comment.likesInfo.dislikesCount,

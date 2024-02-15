@@ -22,9 +22,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
       const responseBody: any = exception.getResponse();
 
-      responseBody.message.forEach((e) =>
-        errorsResponse.errorsMessages.push(e),
-      );
+      if (Array.isArray(responseBody.message)) {
+        responseBody.message.forEach((e) =>
+          errorsResponse.errorsMessages.push(e),
+        );
+      } else {
+        errorsResponse.errorsMessages.push(responseBody.message);
+      }
+
       response.status(status).json(errorsResponse);
     } else {
       response.status(status).json({

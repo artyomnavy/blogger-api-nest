@@ -8,6 +8,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../domain/user.entity';
 import { ObjectId } from 'mongodb';
+import {
+  NewPasswordRecoveryModel,
+  PasswordRecoveryModel,
+} from '../../auth/api/models/auth.input.model';
 
 @Injectable()
 export class UsersRepository {
@@ -21,5 +25,44 @@ export class UsersRepository {
       _id: new ObjectId(id),
     });
     return resultDeleteUser.deletedCount === 1;
+  }
+  async updateConfirmationCode(
+    email: string,
+    newCode: string,
+    newExpirationDate: Date,
+  ): Promise<boolean> {
+    const resultUpdateConfirmationCode = await this.userModel.updateOne(
+      { 'accountData.email': email },
+      {
+        $set: {
+          'emailConfirmation.confirmationCode': newCode,
+          'emailConfirmation.expirationDate': newExpirationDate,
+        },
+      },
+    );
+    return resultUpdateConfirmationCode.modifiedCount === 1;
+  }
+  async updateConfirmStatus(_id: ObjectId): Promise<boolean> {
+    const resultUpdateConfirmStatus = await this.userModel.updateOne(
+      { _id },
+      {
+        $set: { 'emailConfirmation.isConfirmed': true },
+      },
+    );
+    return resultUpdateConfirmStatus.modifiedCount === 1;
+  }
+  async updatePasswordForRecovery(
+    recoveryCode: string,
+    newPassword: string,
+  ): Promise<boolean> {
+    const resultUpdatePassword = await this.userModel.updateOne(
+      { 'emailConfirmation.confirmationCode': recoveryCode },
+      {
+        $set: {
+          'accountData.password': newPassword,
+        },
+      },
+    );
+    return resultUpdatePassword.modifiedCount === 1;
   }
 }

@@ -4,9 +4,14 @@ import { UsersRepository } from '../infrastructure/users.repository';
 import { ObjectId } from 'mongodb';
 import bcrypt from 'bcrypt';
 import { Injectable } from '@nestjs/common';
+import { AuthLoginModel } from '../../auth/api/models/auth.input.model';
+import { UsersQueryRepository } from '../infrastructure/users.query-repository';
 @Injectable()
 export class UsersService {
-  constructor(protected usersRepository: UsersRepository) {}
+  constructor(
+    protected usersRepository: UsersRepository,
+    protected usersQueryRepository: UsersQueryRepository,
+  ) {}
 
   async createUserByAdmin(
     createData: CreateUserModel,
@@ -19,7 +24,7 @@ export class UsersService {
         login: createData.login,
         password: passwordHash,
         email: createData.email,
-        createdAt: new Date().toISOString(),
+        createdAt: new Date(),
       },
       {
         confirmationCode: null,
@@ -32,7 +37,30 @@ export class UsersService {
 
     return createdUser;
   }
+  async checkCredentials(inputData: AuthLoginModel) {
+    const user = await this.usersQueryRepository.getUserByLoginOrEmail(
+      inputData.loginOrEmail,
+    );
 
+    if (!user) {
+      return null;
+    }
+
+    if (!user.emailConfirmation.isConfirmed) {
+      return null;
+    }
+
+    const checkPassword = await bcrypt.compare(
+      inputData.password,
+      user.accountData.password,
+    );
+
+    if (!checkPassword) {
+      return null;
+    } else {
+      return user;
+    }
+  }
   async deleteUser(id: string): Promise<boolean> {
     return await this.usersRepository.deleteUser(id);
   }

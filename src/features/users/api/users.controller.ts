@@ -18,7 +18,7 @@ import { PaginatorOutputModel } from '../../../common/models/paginator.output.mo
 import { UserOutputModel } from './models/user.output.model';
 import { HTTP_STATUSES } from '../../../utils';
 import { ObjectIdPipe } from '../../../common/pipes/objectId.pipe';
-import { AuthBasicGuard } from '../../../common/guards/auth-basic.guard';
+import { BasicAuthGuard } from '../../../common/guards/basic-auth.guard';
 
 @Controller('users')
 export class UsersController {
@@ -27,7 +27,7 @@ export class UsersController {
     protected usersQueryRepository: UsersQueryRepository,
   ) {}
   @Get()
-  @UseGuards(AuthBasicGuard)
+  @UseGuards(BasicAuthGuard)
   async getAllUsers(
     @Query() query: PaginatorModel,
   ): Promise<PaginatorOutputModel<UserOutputModel>> {
@@ -36,7 +36,7 @@ export class UsersController {
     return users;
   }
   @Post()
-  @UseGuards(AuthBasicGuard)
+  @UseGuards(BasicAuthGuard)
   @HttpCode(HTTP_STATUSES.CREATED_201)
   async createUserByAdmin(
     @Body() createModel: CreateUserModel,
@@ -46,7 +46,7 @@ export class UsersController {
     return newUser;
   }
   @Delete(':id')
-  @UseGuards(AuthBasicGuard)
+  @UseGuards(BasicAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async deleteUser(@Param('id', ObjectIdPipe) userId: string) {
     const isDeleted = await this.usersService.deleteUser(userId);

@@ -23,7 +23,7 @@ import { PaginatorModel } from '../../../common/models/paginator.input.model';
 import { PaginatorOutputModel } from '../../../common/models/paginator.output.model';
 import { HTTP_STATUSES } from '../../../utils';
 import { ObjectIdPipe } from '../../../common/pipes/objectId.pipe';
-import { AuthBasicGuard } from '../../../common/guards/auth-basic.guard';
+import { BasicAuthGuard } from '../../../common/guards/basic-auth.guard';
 
 @Controller('blogs')
 export class BlogsController {
@@ -43,7 +43,7 @@ export class BlogsController {
     return blogs;
   }
   @Post()
-  @UseGuards(AuthBasicGuard)
+  @UseGuards(BasicAuthGuard)
   @HttpCode(HTTP_STATUSES.CREATED_201)
   async createBlog(
     @Body() createModel: CreateAndUpdateBlogModel,
@@ -75,7 +75,7 @@ export class BlogsController {
     return posts;
   }
   @Post(':id/posts')
-  @UseGuards(AuthBasicGuard)
+  @UseGuards(BasicAuthGuard)
   @HttpCode(HTTP_STATUSES.CREATED_201)
   async createPostForBlog(
     @Param('id', ObjectIdPipe) blogId: string,
@@ -109,7 +109,7 @@ export class BlogsController {
     }
   }
   @Put(':id')
-  @UseGuards(AuthBasicGuard)
+  @UseGuards(BasicAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async updateBlog(
     @Param('id', ObjectIdPipe) blogId: string,
@@ -128,7 +128,7 @@ export class BlogsController {
     }
   }
   @Delete(':id')
-  @UseGuards(AuthBasicGuard)
+  @UseGuards(BasicAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async deleteBlog(@Param('id', ObjectIdPipe) blogId: string) {
     const isDeleted = await this.blogsService.deleteBlog(blogId);

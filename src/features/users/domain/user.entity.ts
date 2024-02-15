@@ -16,7 +16,7 @@ class AccountData {
   email: string;
 
   @Prop({ required: true })
-  createdAt: string;
+  createdAt: Date;
 }
 
 @Schema()
@@ -25,7 +25,7 @@ class EmailConfirmation {
   confirmationCode: string;
 
   @Prop()
-  expirationDate: string;
+  expirationDate: Date;
 
   @Prop({ required: true })
   isConfirmed: boolean;

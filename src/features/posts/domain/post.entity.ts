@@ -7,7 +7,7 @@ export type PostDocument = HydratedDocument<PostModel>;
 @Schema()
 class NewestLikes {
   @Prop({ required: true })
-  addedAt: string;
+  addedAt: Date;
 
   @Prop({ required: true })
   userId: string;
@@ -49,7 +49,7 @@ export class Post {
   blogName: string;
 
   @Prop({ required: true })
-  createdAt: string;
+  createdAt: Date;
 
   @Prop({ required: true })
   extendedLikesInfo: ExtendedLikesInfo;

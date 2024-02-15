@@ -14,7 +14,7 @@ export class BlogsService {
       createData.name,
       createData.description,
       createData.websiteUrl,
-      new Date().toISOString(),
+      new Date(),
       false,
     );
 

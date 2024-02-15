@@ -16,7 +16,7 @@ export class BlogExistConstraint implements ValidatorConstraintInterface {
     const blog = await this.blogsQueryRepository.getBlogById(blogId);
 
     if (!blog) {
-      return false;
+      throw new Error('Blog is not exist');
     }
 
     return true;

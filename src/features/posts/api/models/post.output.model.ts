@@ -9,13 +9,13 @@ export class Post {
     public content: string,
     public blogId: string,
     public blogName: string,
-    public createdAt: string,
+    public createdAt: Date,
     public extendedLikesInfo: {
       likesCount: number;
       dislikesCount: number;
       myStatus: string;
       newestLikes: {
-        addedAt: string;
+        addedAt: Date;
         userId: string;
         login: string;
       }[];
@@ -24,6 +24,12 @@ export class Post {
 }
 
 export class NewestLikesModel {
+  addedAt: Date;
+  userId: string;
+  login: string;
+}
+
+export class NewestLikesOutputModel {
   addedAt: string;
   userId: string;
   login: string;
@@ -41,7 +47,7 @@ export class PostOutputModel {
     likesCount: number;
     dislikesCount: number;
     myStatus: string;
-    newestLikes: NewestLikesModel[];
+    newestLikes: NewestLikesOutputModel[];
   };
 }
 
@@ -52,7 +58,7 @@ export class PostModel {
   content: string;
   blogId: string;
   blogName: string;
-  createdAt: string;
+  createdAt: Date;
   extendedLikesInfo: {
     likesCount: number;
     dislikesCount: number;
@@ -68,12 +74,18 @@ export const postMapper = (post: PostDocument): PostOutputModel => {
     content: post.content,
     blogId: post.blogId,
     blogName: post.blogName,
-    createdAt: post.createdAt,
+    createdAt: post.createdAt.toISOString(),
     extendedLikesInfo: {
       likesCount: post.extendedLikesInfo.likesCount,
       dislikesCount: post.extendedLikesInfo.dislikesCount,
       myStatus: post.extendedLikesInfo.myStatus,
-      newestLikes: post.extendedLikesInfo.newestLikes,
+      newestLikes: post.extendedLikesInfo.newestLikes.map((like) => {
+        return {
+          addedAt: like.addedAt.toISOString(),
+          userId: like.userId,
+          login: like.login,
+        };
+      }),
     },
   };
 };

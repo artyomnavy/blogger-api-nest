@@ -12,12 +12,12 @@ export class UserModel {
   login: string;
   password: string;
   email: string;
-  createdAt: string;
+  createdAt: Date;
 }
 
 export class EmailConfirmationModel {
   confirmationCode: string | null;
-  expirationDate: string | null;
+  expirationDate: Date | null;
   isConfirmed: boolean;
 }
 
@@ -40,6 +40,6 @@ export const userMapper = (user: UserDocument): UserOutputModel => {
     id: user._id.toString(),
     login: user.accountData.login,
     email: user.accountData.email,
-    createdAt: user.accountData.createdAt,
+    createdAt: user.accountData.createdAt.toISOString(),
   };
 };

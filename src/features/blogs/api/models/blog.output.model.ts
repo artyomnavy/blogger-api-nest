@@ -7,7 +7,7 @@ export class Blog {
     public name: string,
     public description: string,
     public websiteUrl: string,
-    public createdAt: string,
+    public createdAt: Date,
     public isMembership: boolean,
   ) {}
 }
@@ -17,7 +17,7 @@ export class BlogModel {
   name: string;
   description: string;
   websiteUrl: string;
-  createdAt: string;
+  createdAt: Date;
   isMembership: boolean;
 }
 export class BlogOutputModel {
@@ -35,7 +35,7 @@ export const blogMapper = (blog: BlogDocument): BlogOutputModel => {
     name: blog.name,
     description: blog.description,
     websiteUrl: blog.websiteUrl,
-    createdAt: blog.createdAt,
+    createdAt: blog.createdAt.toISOString(),
     isMembership: blog.isMembership,
   };
 };

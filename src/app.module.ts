@@ -27,16 +27,67 @@ import { PostsRepository } from './features/posts/infrastructure/posts.repositor
 import { UsersRepository } from './features/users/infrastructure/users.repository';
 import { BlogExistConstraint } from './common/decorators/validators/blog-validator.decorator';
 import {
+  CodeConfirmationConstraint,
+  EmailExistAndConfirmedConstraint,
   EmailExistConstraint,
   LoginExistConstraint,
+  RecoveryCodeConstraint,
 } from './common/decorators/validators/user-validator.decorator';
+import { Attempt, AttemptEntity } from './features/auth/domain/attempt.entity';
+import {
+  DeviceSession,
+  DeviceSessionEntity,
+} from './features/devices/domain/device.entity';
+import { DevicesQueryRepository } from './features/devices/infrastrucure/devices.query-repository';
+import { DevicesRepository } from './features/devices/infrastrucure/devices.repository';
+import { AttemptsQueryRepository } from './features/auth/infrastructure/attempts.query-repository';
+import { AttemptsRepository } from './features/auth/infrastructure/attempts.repository';
+import { JwtService } from './application/jwt.service';
+import { EmailsAdapter } from './adapters/EmailsAdapter';
+import { EmailsManager } from './managers/emails-manager';
 dotenv.config();
 
 const mongoURI = process.env.MONGO_URL || 'mongodb://0.0.0.0:27017';
 
 if (!mongoURI) {
-  throw new Error(`Url dosen't found`);
+  throw new Error(`Url doesn't found`);
 }
+
+const servicesProviders = [
+  AppService,
+  BlogsService,
+  PostsService,
+  UsersService,
+  JwtService,
+];
+
+const repositoriesProviders = [
+  BlogsRepository,
+  PostsRepository,
+  UsersRepository,
+  DevicesRepository,
+  AttemptsRepository,
+];
+
+const queryRepositoriesProviders = [
+  BlogsQueryRepository,
+  CommentsQueryRepository,
+  UsersQueryRepository,
+  PostsQueryRepository,
+  DevicesQueryRepository,
+  AttemptsQueryRepository,
+];
+
+const emailsProviders = [EmailsAdapter, EmailsManager];
+
+const constraintsProviders = [
+  BlogExistConstraint,
+  LoginExistConstraint,
+  EmailExistConstraint,
+  RecoveryCodeConstraint,
+  CodeConfirmationConstraint,
+  EmailExistAndConfirmedConstraint,
+];
 
 @Module({
   imports: [
@@ -48,6 +99,8 @@ if (!mongoURI) {
       { name: Post.name, schema: PostEntity },
       { name: Comment.name, schema: CommentEntity },
       { name: User.name, schema: UserEntity },
+      { name: Attempt.name, schema: AttemptEntity },
+      { name: DeviceSession.name, schema: DeviceSessionEntity },
     ]),
   ],
   controllers: [
@@ -59,20 +112,11 @@ if (!mongoURI) {
     TestController,
   ],
   providers: [
-    AppService,
-    BlogsService,
-    PostsService,
-    UsersService,
-    BlogsQueryRepository,
-    CommentsQueryRepository,
-    UsersQueryRepository,
-    PostsQueryRepository,
-    BlogsRepository,
-    PostsRepository,
-    UsersRepository,
-    BlogExistConstraint,
-    LoginExistConstraint,
-    EmailExistConstraint,
+    ...servicesProviders,
+    ...repositoriesProviders,
+    ...queryRepositoriesProviders,
+    ...emailsProviders,
+    ...constraintsProviders,
   ],
 })
 export class AppModule {}
