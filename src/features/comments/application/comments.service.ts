@@ -1,66 +1,68 @@
-import { CreateAndUpdatePostModel } from '../api/models/post.input.model';
-import { Post, PostOutputModel } from '../api/models/post.output.model';
-import { BlogsQueryRepository } from '../../blogs/infrastructure/blogs.query-repository';
-import { PostsRepository } from '../infrastructure/posts.repository';
-import { ObjectId } from 'mongodb';
-import { likesStatuses } from '../../../utils';
 import { Injectable } from '@nestjs/common';
+import { likesStatuses } from '../../../utils';
+import { ObjectId } from 'mongodb';
+import {
+  CommentOutputModel,
+  Comment,
+} from '../api/models/comment.output.model';
+import { CommentsRepository } from '../infrastructure/comments.repository';
 import { LikesRepository } from '../../likes/infrastructure/likes.repository';
+import { CreateAndUpdateCommentModel } from '../api/models/comment.input.model';
+
 @Injectable()
-export class PostsService {
+export class CommentsService {
   constructor(
-    protected postsRepository: PostsRepository,
-    protected blogsQueryRepository: BlogsQueryRepository,
+    protected commentsRepository: CommentsRepository,
     protected likesRepository: LikesRepository,
   ) {}
-  async createPost(
-    createData: CreateAndUpdatePostModel,
-  ): Promise<PostOutputModel> {
-    const blog = await this.blogsQueryRepository.getBlogById(
-      createData.blogId!,
-    );
-
-    const newPost = new Post(
+  async createComment(
+    postId: string,
+    userId: string,
+    userLogin: string,
+    content: string,
+  ): Promise<CommentOutputModel> {
+    const newComment = new Comment(
       new ObjectId(),
-      createData.title,
-      createData.shortDescription,
-      createData.content,
-      createData.blogId!,
-      blog!.name,
+      content,
+      {
+        userId: userId,
+        userLogin: userLogin,
+      },
       new Date(),
+      postId,
       {
         likesCount: 0,
         dislikesCount: 0,
         myStatus: likesStatuses.none,
-        newestLikes: [],
       },
     );
 
-    const createdPost = await this.postsRepository.createPost(newPost);
+    const createdComment =
+      await this.commentsRepository.createComment(newComment);
 
-    return createdPost;
+    return createdComment;
   }
-  async updatePost(
+  async updateComment(
     id: string,
-    updateData: CreateAndUpdatePostModel,
+    updateData: CreateAndUpdateCommentModel,
   ): Promise<boolean> {
-    return await this.postsRepository.updatePost(id, updateData);
+    return await this.commentsRepository.updateComment(id, updateData);
   }
-  async changeLikeStatusPostForUser(
+  async changeLikeStatusCommentForUser(
     userId: string,
-    post: PostOutputModel,
+    comment: CommentOutputModel,
     likeStatus: string,
   ): Promise<boolean> {
-    const currentMyStatus = post.extendedLikesInfo.myStatus;
-    let likesCount = post.extendedLikesInfo.likesCount;
-    let dislikesCount = post.extendedLikesInfo.dislikesCount;
+    const currentMyStatus = comment.likesInfo.myStatus;
+    let likesCount = comment.likesInfo.likesCount;
+    let dislikesCount = comment.likesInfo.dislikesCount;
 
     if (likeStatus === currentMyStatus) {
       return true;
     }
 
     const newLike = {
-      commentIdOrPostId: post.id,
+      commentIdOrPostId: comment.id,
       userId: userId,
       status: likeStatus,
       addedAt: new Date(),
@@ -69,7 +71,7 @@ export class PostsService {
     if (currentMyStatus === likesStatuses.none) {
       await this.likesRepository.createLike(newLike);
     } else if (likeStatus === likesStatuses.none) {
-      await this.likesRepository.deleteLike(post.id, userId);
+      await this.likesRepository.deleteLike(comment.id, userId);
     } else {
       await this.likesRepository.updateLike(newLike);
     }
@@ -118,13 +120,13 @@ export class PostsService {
       dislikesCount++;
     }
 
-    return await this.postsRepository.changeLikeStatusPostForUser(
-      post.id,
+    return await this.commentsRepository.changeLikeStatusCommentForUser(
+      comment.id,
       likesCount,
       dislikesCount,
     );
   }
-  async deletePost(id: string): Promise<boolean> {
-    return this.postsRepository.deletePost(id);
+  async deleteComment(id: string): Promise<boolean> {
+    return this.commentsRepository.deleteComment(id);
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
-  commentMapper,
+  CommentModel,
   CommentOutputModel,
 } from '../api/models/comment.output.model';
 import { InjectModel } from '@nestjs/mongoose';
@@ -9,13 +9,19 @@ import { ObjectId } from 'mongodb';
 import { Comment, CommentDocument } from '../domain/comment.entity';
 import { PaginatorModel } from '../../../common/models/paginator.input.model';
 import { PaginatorOutputModel } from '../../../common/models/paginator.output.model';
+import { LikesQueryRepository } from '../../likes/infrastructure/likes.query-repository';
+import { likesStatuses } from '../../../utils';
 
 @Injectable()
 export class CommentsQueryRepository {
   constructor(
     @InjectModel(Comment.name) private commentModel: Model<CommentDocument>,
+    protected likesQueryRepository: LikesQueryRepository,
   ) {}
-  async getCommentById(commentId: string): Promise<CommentOutputModel | null> {
+  async getCommentById(
+    commentId: string,
+    userId?: string | null,
+  ): Promise<CommentOutputModel | null> {
     const comment = await this.commentModel.findOne({
       _id: new ObjectId(commentId),
     });
@@ -23,11 +29,11 @@ export class CommentsQueryRepository {
     if (!comment) {
       return null;
     } else {
-      return commentMapper(comment);
+      return await this.commentMapper(comment, userId);
     }
   }
   async getCommentsByPostId(
-    queryData: PaginatorModel & { postId: string },
+    queryData: PaginatorModel & { postId: string } & { userId?: string | null },
   ): Promise<PaginatorOutputModel<CommentOutputModel>> {
     const pageNumber = queryData.pageNumber ? queryData.pageNumber : 1;
     const pageSize = queryData.pageSize ? queryData.pageSize : 10;
@@ -36,6 +42,7 @@ export class CommentsQueryRepository {
       ? queryData.sortDirection
       : 'desc';
     const postId = queryData.postId;
+    const userId = queryData.userId;
 
     const filter = {
       postId: postId,
@@ -57,7 +64,38 @@ export class CommentsQueryRepository {
       page: +pageNumber,
       pageSize: +pageSize,
       totalCount: +totalCount,
-      items: comments.map(commentMapper),
+      items: await Promise.all(
+        comments.map((comment) => this.commentMapper(comment, userId)),
+      ),
+    };
+  }
+  async commentMapper(comment: CommentModel, userId?: string | null) {
+    let likeStatus: string | null = null;
+
+    if (userId) {
+      const like = await this.likesQueryRepository.getLikeCommentOrPostForUser(
+        comment._id.toString(),
+        userId,
+      );
+
+      if (like) {
+        likeStatus = like.status;
+      }
+    }
+
+    return {
+      id: comment._id.toString(),
+      content: comment.content,
+      commentatorInfo: {
+        userId: comment.commentatorInfo.userId,
+        userLogin: comment.commentatorInfo.userLogin,
+      },
+      createdAt: comment.createdAt.toISOString(),
+      likesInfo: {
+        likesCount: comment.likesInfo.likesCount,
+        dislikesCount: comment.likesInfo.dislikesCount,
+        myStatus: likeStatus || likesStatuses.none,
+      },
     };
   }
 }

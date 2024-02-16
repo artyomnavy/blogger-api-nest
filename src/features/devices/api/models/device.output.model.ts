@@ -1,3 +1,7 @@
+import { BlogDocument } from '../../../blogs/domain/blog.entity';
+import { BlogOutputModel } from '../../../blogs/api/models/blog.output.model';
+import { DeviceSessionDocument } from '../../domain/device.entity';
+
 export class DeviceSessionModel {
   iat: Date;
   exp: Date;
@@ -24,3 +28,14 @@ export class DeviceSession {
     public userId: string,
   ) {}
 }
+
+export const deviceSessionMapper = (
+  deviceSession: DeviceSessionDocument,
+): DeviceSessionOutputModel => {
+  return {
+    ip: deviceSession.ip,
+    title: deviceSession.deviceName,
+    lastActiveDate: deviceSession.iat.toISOString(),
+    deviceId: deviceSession.deviceId,
+  };
+};

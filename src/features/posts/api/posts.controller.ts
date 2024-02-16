@@ -9,12 +9,13 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { PostsService } from '../application/posts.service';
 import { PostsQueryRepository } from '../infrastructure/posts.query-repository';
 import { CreateAndUpdatePostModel } from './models/post.input.model';
-import { CommentsQueryRepository } from '../../comments/infrastructure/comments.queryRepository';
+import { CommentsQueryRepository } from '../../comments/infrastructure/comments.query-repository';
 import { PostOutputModel } from './models/post.output.model';
 import { PaginatorModel } from '../../../common/models/paginator.input.model';
 import { PaginatorOutputModel } from '../../../common/models/paginator.output.model';
@@ -22,6 +23,11 @@ import { CommentOutputModel } from '../../comments/api/models/comment.output.mod
 import { HTTP_STATUSES } from '../../../utils';
 import { ObjectIdPipe } from '../../../common/pipes/objectId.pipe';
 import { BasicAuthGuard } from '../../../common/guards/basic-auth.guard';
+import { Request } from 'express';
+import { CreateAndUpdateCommentModel } from '../../comments/api/models/comment.input.model';
+import { UsersQueryRepository } from '../../users/infrastructure/users.query-repository';
+import { CommentsService } from '../../comments/application/comments.service';
+import { UpdateLikeModel } from '../../likes/api/models/like.input.model';
 
 @Controller('posts')
 export class PostsController {
@@ -29,6 +35,8 @@ export class PostsController {
     protected postsService: PostsService,
     protected postsQueryRepository: PostsQueryRepository,
     protected commentsQueryRepository: CommentsQueryRepository,
+    protected usersQueryRepository: UsersQueryRepository,
+    protected commentsService: CommentsService,
   ) {}
   @Get(':id/comments')
   async getCommentsForPost(
@@ -68,6 +76,54 @@ export class PostsController {
     const newPost = await this.postsService.createPost(createModel);
 
     return newPost;
+  }
+  @Post('/:id/comments')
+  @HttpCode(HTTP_STATUSES.CREATED_201)
+  async createCommentForPost(
+    @Param('id', ObjectIdPipe) postId: string,
+    @Body() createModel: CreateAndUpdateCommentModel,
+    @Req()
+    req: Request,
+  ) {
+    const userId = req.userId!;
+
+    const post = await this.postsQueryRepository.getPostById(postId);
+
+    if (!post) throw new NotFoundException('Post not found');
+
+    const user = await this.usersQueryRepository.getUserById(userId);
+
+    const userLogin = user!.login;
+
+    const newComment = await this.commentsService.createComment(
+      postId,
+      userId,
+      userLogin,
+      createModel.content,
+    );
+
+    return newComment;
+  }
+  @Put('/:id/like-status')
+  @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
+  async changeLikeStatusForPost(
+    @Param('id', ObjectIdPipe) postId: string,
+    @Body() updateData: UpdateLikeModel,
+    @Req() req: Request,
+  ) {
+    const userId = req.userId!;
+
+    const post = await this.postsQueryRepository.getPostById(postId, userId);
+
+    if (!post) throw new NotFoundException('Post not found');
+
+    const isUpdated = await this.postsService.changeLikeStatusPostForUser(
+      userId,
+      post,
+      updateData.likeStatus,
+    );
+
+    if (isUpdated) return;
   }
   @Get(':id')
   async getPost(

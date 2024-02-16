@@ -1,4 +1,9 @@
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import dotenv from 'dotenv';
@@ -18,7 +23,7 @@ import { BlogsService } from './features/blogs/application/blogs.service';
 import { PostsService } from './features/posts/application/posts.service';
 import { UsersService } from './features/users/application/users.service';
 import { BlogsQueryRepository } from './features/blogs/infrastructure/blogs.query-repository';
-import { CommentsQueryRepository } from './features/comments/infrastructure/comments.queryRepository';
+import { CommentsQueryRepository } from './features/comments/infrastructure/comments.query-repository';
 import { UsersQueryRepository } from './features/users/infrastructure/users.query-repository';
 import { PostsQueryRepository } from './features/posts/infrastructure/posts.query-repository';
 import { TestController } from '../test/test.controller';
@@ -45,6 +50,12 @@ import { AttemptsRepository } from './features/auth/infrastructure/attempts.repo
 import { JwtService } from './application/jwt.service';
 import { EmailsAdapter } from './adapters/EmailsAdapter';
 import { EmailsManager } from './managers/emails-manager';
+import { CommentsRepository } from './features/comments/infrastructure/comments.repository';
+import { LikesRepository } from './features/likes/infrastructure/likes.repository';
+import { LikesQueryRepository } from './features/likes/infrastructure/likes.query-repository';
+import { CommentsService } from './features/comments/application/comments.service';
+import { Like, LikeEntity } from './features/likes/domain/like.entity';
+import { DeviceMiddleware } from './common/middlewares/device.middleware';
 dotenv.config();
 
 const mongoURI = process.env.MONGO_URL || 'mongodb://0.0.0.0:27017';
@@ -58,6 +69,7 @@ const servicesProviders = [
   BlogsService,
   PostsService,
   UsersService,
+  CommentsService,
   JwtService,
 ];
 
@@ -67,6 +79,8 @@ const repositoriesProviders = [
   UsersRepository,
   DevicesRepository,
   AttemptsRepository,
+  CommentsRepository,
+  LikesRepository,
 ];
 
 const queryRepositoriesProviders = [
@@ -76,6 +90,7 @@ const queryRepositoriesProviders = [
   PostsQueryRepository,
   DevicesQueryRepository,
   AttemptsQueryRepository,
+  LikesQueryRepository,
 ];
 
 const emailsProviders = [EmailsAdapter, EmailsManager];
@@ -101,6 +116,7 @@ const constraintsProviders = [
       { name: User.name, schema: UserEntity },
       { name: Attempt.name, schema: AttemptEntity },
       { name: DeviceSession.name, schema: DeviceSessionEntity },
+      { name: Like.name, schema: LikeEntity },
     ]),
   ],
   controllers: [
@@ -119,4 +135,11 @@ const constraintsProviders = [
     ...constraintsProviders,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(DeviceMiddleware).forRoutes({
+      path: 'security/devices/:id',
+      method: RequestMethod.DELETE,
+    });
+  }
+}

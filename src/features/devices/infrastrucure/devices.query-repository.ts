@@ -1,4 +1,8 @@
-import { DeviceSessionModel } from '../api/models/device.output.model';
+import {
+  deviceSessionMapper,
+  DeviceSessionModel,
+  DeviceSessionOutputModel,
+} from '../api/models/device.output.model';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { DeviceSession, DeviceSessionDocument } from '../domain/device.entity';
@@ -20,6 +24,27 @@ export class DevicesQueryRepository {
         userId: userId,
         deviceId: deviceId,
       });
+
+    if (deviceSession) {
+      return deviceSession;
+    } else {
+      return null;
+    }
+  }
+  async getAllDevicesSessionsForUser(
+    userId: string,
+  ): Promise<DeviceSessionOutputModel[]> {
+    const devicesSessions = await this.deviceModel.find({
+      userId: userId,
+    });
+
+    return devicesSessions.map(deviceSessionMapper);
+  }
+  async getDeviceSessionById(
+    deviceId: string,
+  ): Promise<DeviceSessionModel | null> {
+    const deviceSession: DeviceSessionModel | null =
+      await this.deviceModel.findOne({ deviceId: deviceId });
 
     if (deviceSession) {
       return deviceSession;

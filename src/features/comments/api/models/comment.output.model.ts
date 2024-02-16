@@ -29,19 +29,20 @@ export class CommentOutputModel {
   };
 }
 
-export const commentMapper = (comment: CommentDocument): CommentOutputModel => {
-  return {
-    id: comment._id.toString(),
-    content: comment.content,
-    commentatorInfo: {
-      userId: comment.commentatorInfo.userId,
-      userLogin: comment.commentatorInfo.userLogin,
+export class Comment {
+  constructor(
+    public _id: ObjectId,
+    public content: string,
+    public commentatorInfo: {
+      userId: string;
+      userLogin: string;
     },
-    createdAt: comment.createdAt.toISOString(),
-    likesInfo: {
-      likesCount: comment.likesInfo.likesCount,
-      dislikesCount: comment.likesInfo.dislikesCount,
-      myStatus: comment.likesInfo.myStatus,
+    public createdAt: Date,
+    public postId: string,
+    public likesInfo: {
+      likesCount: number;
+      dislikesCount: number;
+      myStatus: string;
     },
-  };
-};
+  ) {}
+}

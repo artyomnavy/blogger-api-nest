@@ -1,5 +1,4 @@
 import { ObjectId } from 'mongodb';
-import { PostDocument } from '../../domain/post.entity';
 
 export class Post {
   constructor(
@@ -66,26 +65,3 @@ export class PostModel {
     newestLikes: NewestLikesModel[];
   };
 }
-export const postMapper = (post: PostDocument): PostOutputModel => {
-  return {
-    id: post._id.toString(),
-    title: post.title,
-    shortDescription: post.shortDescription,
-    content: post.content,
-    blogId: post.blogId,
-    blogName: post.blogName,
-    createdAt: post.createdAt.toISOString(),
-    extendedLikesInfo: {
-      likesCount: post.extendedLikesInfo.likesCount,
-      dislikesCount: post.extendedLikesInfo.dislikesCount,
-      myStatus: post.extendedLikesInfo.myStatus,
-      newestLikes: post.extendedLikesInfo.newestLikes.map((like) => {
-        return {
-          addedAt: like.addedAt.toISOString(),
-          userId: like.userId,
-          login: like.login,
-        };
-      }),
-    },
-  };
-};

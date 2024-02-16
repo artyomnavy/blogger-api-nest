@@ -13,8 +13,10 @@ export class DevicesRepository {
   async createDeviceSession(
     newDeviceSession: DeviceSessionModel,
   ): Promise<DeviceSessionModel> {
-    await this.deviceModel.create(newDeviceSession);
-    return newDeviceSession;
+    const resultCreateDeviceSession =
+      await this.deviceModel.create(newDeviceSession);
+
+    return resultCreateDeviceSession;
   }
   async updateDeviceSession(updateData: DeviceSessionModel): Promise<boolean> {
     const resultUpdateDeviceSession = await this.deviceModel.updateOne(
@@ -42,6 +44,27 @@ export class DevicesRepository {
       deviceId: deviceId,
       userId: userId,
     });
+
+    return resultTerminateDeviceSession.deletedCount === 1;
+  }
+  async terminateAllOthersDevicesSessions(
+    userId: string,
+    deviceId: string,
+  ): Promise<boolean> {
+    const resultTerminateAllOthersDevicesSessions =
+      await this.deviceModel.deleteMany({
+        userId: userId,
+        deviceId: {
+          $ne: deviceId,
+        },
+      });
+    return resultTerminateAllOthersDevicesSessions.deletedCount === 1;
+  }
+  async terminateDeviceSessionById(deviceId: string): Promise<boolean> {
+    const resultTerminateDeviceSession = await this.deviceModel.deleteOne({
+      deviceId: deviceId,
+    });
+
     return resultTerminateDeviceSession.deletedCount === 1;
   }
 }

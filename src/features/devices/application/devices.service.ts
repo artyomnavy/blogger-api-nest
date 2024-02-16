@@ -35,4 +35,16 @@ export class DevicesService {
       userId,
     );
   }
+  async terminateDeviceSessionById(deviceId: string): Promise<boolean> {
+    return await this.devicesRepository.terminateDeviceSessionById(deviceId);
+  }
+  async terminateAllOthersDevicesSessions(
+    userId: string,
+    deviceId: string,
+  ): Promise<boolean> {
+    return await this.devicesRepository.terminateAllOthersDevicesSessions(
+      userId,
+      deviceId,
+    );
+  }
 }

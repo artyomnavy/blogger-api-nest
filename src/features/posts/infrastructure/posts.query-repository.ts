@@ -3,15 +3,20 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostDocument } from '../domain/post.entity';
 import { Model } from 'mongoose';
 import { ObjectId } from 'mongodb';
-import { postMapper, PostOutputModel } from '../api/models/post.output.model';
+import { PostModel, PostOutputModel } from '../api/models/post.output.model';
 import { PaginatorModel } from '../../../common/models/paginator.input.model';
 import { PaginatorOutputModel } from '../../../common/models/paginator.output.model';
+import { likesStatuses } from '../../../utils';
+import { LikesQueryRepository } from '../../likes/infrastructure/likes.query-repository';
 
 @Injectable()
 export class PostsQueryRepository {
-  constructor(@InjectModel(Post.name) private postModel: Model<PostDocument>) {}
+  constructor(
+    @InjectModel(Post.name) private postModel: Model<PostDocument>,
+    protected likesQueryRepository: LikesQueryRepository,
+  ) {}
   async getAllPosts(
-    queryData: PaginatorModel,
+    queryData: PaginatorModel & { userId?: string | null },
   ): Promise<PaginatorOutputModel<PostOutputModel>> {
     const pageNumber = queryData.pageNumber ? queryData.pageNumber : 1;
     const pageSize = queryData.pageSize ? queryData.pageSize : 10;
@@ -19,6 +24,8 @@ export class PostsQueryRepository {
     const sortDirection = queryData.sortDirection
       ? queryData.sortDirection
       : 'desc';
+
+    const userId = queryData.userId;
 
     const posts = await this.postModel
       .find({})
@@ -36,11 +43,16 @@ export class PostsQueryRepository {
       page: +pageNumber,
       pageSize: +pageSize,
       totalCount: +totalCount,
-      items: posts.map(postMapper),
+      items: await Promise.all(
+        posts.map((post) => this.postMapper(post, userId)),
+      ),
     };
   }
 
-  async getPostById(postId: string): Promise<PostOutputModel | null> {
+  async getPostById(
+    postId: string,
+    userId?: string | null,
+  ): Promise<PostOutputModel | null> {
     const post = await this.postModel.findOne({
       _id: new ObjectId(postId),
     });
@@ -48,14 +60,12 @@ export class PostsQueryRepository {
     if (!post) {
       return null;
     } else {
-      return postMapper(post);
+      return await this.postMapper(post, userId);
     }
   }
 
   async getPostsByBlogId(
-    queryData: PaginatorModel & {
-      blogId: string;
-    },
+    queryData: PaginatorModel & { blogId: string } & { userId?: string | null },
   ): Promise<PaginatorOutputModel<PostOutputModel>> {
     const pageNumber = queryData.pageNumber ? queryData.pageNumber : 1;
     const pageSize = queryData.pageSize ? queryData.pageSize : 10;
@@ -64,6 +74,7 @@ export class PostsQueryRepository {
       ? queryData.sortDirection
       : 'desc';
     const blogId = queryData.blogId;
+    const userId = queryData.userId;
 
     const filter = {
       blogId: {
@@ -87,7 +98,43 @@ export class PostsQueryRepository {
       page: +pageNumber,
       pageSize: +pageSize,
       totalCount: +totalCount,
-      items: posts.map(postMapper),
+      items: await Promise.all(
+        posts.map((post) => this.postMapper(post, userId)),
+      ),
+    };
+  }
+  async postMapper(post: PostModel, userId?: string | null) {
+    let likeStatus: string | null = null;
+
+    if (userId) {
+      const like = await this.likesQueryRepository.getLikeCommentOrPostForUser(
+        post._id.toString(),
+        userId,
+      );
+
+      if (like) {
+        likeStatus = like.status;
+      }
+    }
+
+    const newestLikes = await this.likesQueryRepository.getNewestLikesForPost(
+      post._id.toString(),
+    );
+
+    return {
+      id: post._id.toString(),
+      title: post.title,
+      shortDescription: post.shortDescription,
+      content: post.content,
+      blogId: post.blogId,
+      blogName: post.blogName,
+      createdAt: post.createdAt.toISOString(),
+      extendedLikesInfo: {
+        likesCount: post.extendedLikesInfo.likesCount,
+        dislikesCount: post.extendedLikesInfo.dislikesCount,
+        myStatus: likeStatus || likesStatuses.none,
+        newestLikes: newestLikes,
+      },
     };
   }
 }
