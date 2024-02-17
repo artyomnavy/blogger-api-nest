@@ -28,6 +28,7 @@ import { CreateAndUpdateCommentModel } from '../../comments/api/models/comment.i
 import { UsersQueryRepository } from '../../users/infrastructure/users.query-repository';
 import { CommentsService } from '../../comments/application/comments.service';
 import { UpdateLikeModel } from '../../likes/api/models/like.input.model';
+import { BearerAuthGuard } from '../../../common/guards/bearer-auth.guard';
 
 @Controller('posts')
 export class PostsController {
@@ -78,6 +79,7 @@ export class PostsController {
     return newPost;
   }
   @Post('/:id/comments')
+  @UseGuards(BearerAuthGuard)
   @HttpCode(HTTP_STATUSES.CREATED_201)
   async createCommentForPost(
     @Param('id', ObjectIdPipe) postId: string,
@@ -105,6 +107,7 @@ export class PostsController {
     return newComment;
   }
   @Put('/:id/like-status')
+  @UseGuards(BearerAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async changeLikeStatusForPost(
     @Param('id', ObjectIdPipe) postId: string,

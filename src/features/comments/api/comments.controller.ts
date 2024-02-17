@@ -9,6 +9,7 @@ import {
   Param,
   Put,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { CommentsQueryRepository } from '../infrastructure/comments.query-repository';
 import { ObjectIdPipe } from '../../../common/pipes/objectId.pipe';
@@ -17,6 +18,7 @@ import { Request } from 'express';
 import { HTTP_STATUSES } from '../../../utils';
 import { CommentsService } from '../application/comments.service';
 import { CreateAndUpdateCommentModel } from './models/comment.input.model';
+import { BearerAuthGuard } from '../../../common/guards/bearer-auth.guard';
 
 @Controller('comments')
 export class CommentsController {
@@ -38,6 +40,7 @@ export class CommentsController {
   }
 
   @Put('/:id/like-status')
+  @UseGuards(BearerAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async changeLikeStatusForComment(
     @Param('id', ObjectIdPipe) commentId: string,
@@ -63,6 +66,7 @@ export class CommentsController {
   }
 
   @Put('/:id')
+  @UseGuards(BearerAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async updateComment(
     @Param('id', ObjectIdPipe) commentId: string,
@@ -91,6 +95,7 @@ export class CommentsController {
   }
 
   @Delete()
+  @UseGuards(BearerAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async deleteComment(
     @Param('id', ObjectIdPipe) commentId: string,
