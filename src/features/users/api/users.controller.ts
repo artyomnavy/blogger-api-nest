@@ -17,7 +17,7 @@ import { PaginatorModel } from '../../../common/models/paginator.input.model';
 import { PaginatorOutputModel } from '../../../common/models/paginator.output.model';
 import { UserOutputModel } from './models/user.output.model';
 import { HTTP_STATUSES } from '../../../utils';
-import { ObjectIdPipe } from '../../../common/pipes/objectId.pipe';
+import { ObjectIdPipe } from '../../../common/pipes/object-id.pipe';
 import { BasicAuthGuard } from '../../../common/guards/basic-auth.guard';
 
 @Controller('users')

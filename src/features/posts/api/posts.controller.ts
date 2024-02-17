@@ -9,7 +9,6 @@ import {
   Post,
   Put,
   Query,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { PostsService } from '../application/posts.service';
@@ -21,14 +20,14 @@ import { PaginatorModel } from '../../../common/models/paginator.input.model';
 import { PaginatorOutputModel } from '../../../common/models/paginator.output.model';
 import { CommentOutputModel } from '../../comments/api/models/comment.output.model';
 import { HTTP_STATUSES } from '../../../utils';
-import { ObjectIdPipe } from '../../../common/pipes/objectId.pipe';
+import { ObjectIdPipe } from '../../../common/pipes/object-id.pipe';
 import { BasicAuthGuard } from '../../../common/guards/basic-auth.guard';
-import { Request } from 'express';
 import { CreateAndUpdateCommentModel } from '../../comments/api/models/comment.input.model';
 import { UsersQueryRepository } from '../../users/infrastructure/users.query-repository';
 import { CommentsService } from '../../comments/application/comments.service';
 import { UpdateLikeModel } from '../../likes/api/models/like.input.model';
-import { BearerAuthGuard } from '../../../common/guards/bearer-auth.guard';
+import { JwtBearerAuthGuard } from '../../../common/guards/jwt-bearer-auth-guard.service';
+import { CurrentUserId } from '../../../common/decorators/current-user-id.param.decorator';
 
 @Controller('posts')
 export class PostsController {
@@ -79,27 +78,24 @@ export class PostsController {
     return newPost;
   }
   @Post('/:id/comments')
-  @UseGuards(BearerAuthGuard)
+  @UseGuards(JwtBearerAuthGuard)
   @HttpCode(HTTP_STATUSES.CREATED_201)
   async createCommentForPost(
     @Param('id', ObjectIdPipe) postId: string,
+    @CurrentUserId() currentUserId: string,
     @Body() createModel: CreateAndUpdateCommentModel,
-    @Req()
-    req: Request,
   ) {
-    const userId = req.userId!;
-
     const post = await this.postsQueryRepository.getPostById(postId);
 
     if (!post) throw new NotFoundException('Post not found');
 
-    const user = await this.usersQueryRepository.getUserById(userId);
+    const user = await this.usersQueryRepository.getUserById(currentUserId);
 
     const userLogin = user!.login;
 
     const newComment = await this.commentsService.createComment(
       postId,
-      userId,
+      currentUserId,
       userLogin,
       createModel.content,
     );
@@ -107,21 +103,22 @@ export class PostsController {
     return newComment;
   }
   @Put('/:id/like-status')
-  @UseGuards(BearerAuthGuard)
+  @UseGuards(JwtBearerAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async changeLikeStatusForPost(
     @Param('id', ObjectIdPipe) postId: string,
+    @CurrentUserId() currentUserId: string,
     @Body() updateData: UpdateLikeModel,
-    @Req() req: Request,
   ) {
-    const userId = req.userId!;
-
-    const post = await this.postsQueryRepository.getPostById(postId, userId);
+    const post = await this.postsQueryRepository.getPostById(
+      postId,
+      currentUserId,
+    );
 
     if (!post) throw new NotFoundException('Post not found');
 
     const isUpdated = await this.postsService.changeLikeStatusPostForUser(
-      userId,
+      currentUserId,
       post,
       updateData.likeStatus,
     );

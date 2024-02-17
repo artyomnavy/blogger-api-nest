@@ -8,10 +8,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../domain/user.entity';
 import { ObjectId } from 'mongodb';
-import {
-  NewPasswordRecoveryModel,
-  PasswordRecoveryModel,
-} from '../../auth/api/models/auth.input.model';
 
 @Injectable()
 export class UsersRepository {

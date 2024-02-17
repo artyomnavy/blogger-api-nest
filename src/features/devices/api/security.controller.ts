@@ -3,7 +3,7 @@ import { DevicesQueryRepository } from '../infrastrucure/devices.query-repositor
 import { Controller, Delete, Get, HttpCode, Param, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { HTTP_STATUSES } from '../../../utils';
-import { ObjectIdPipe } from '../../../common/pipes/objectId.pipe';
+import { ObjectIdPipe } from '../../../common/pipes/object-id.pipe';
 
 @Controller('security')
 export class DevicesController {

@@ -13,6 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { CreateUserModel } from '../../users/api/models/user.input.model';
 import { AttemptModel } from '../api/models/attempt.model';
 import { EmailsManager } from '../../../managers/emails-manager';
+import { AuthLoginModel } from '../api/models/auth.input.model';
 
 @Injectable()
 export class AuthService {
@@ -57,6 +58,30 @@ export class AuthService {
     }
 
     return createdUser;
+  }
+  async checkCredentials(inputData: AuthLoginModel) {
+    const user = await this.usersQueryRepository.getUserByLoginOrEmail(
+      inputData.loginOrEmail,
+    );
+
+    if (!user) {
+      return null;
+    }
+
+    if (!user.emailConfirmation.isConfirmed) {
+      return null;
+    }
+
+    const checkPassword = await bcrypt.compare(
+      inputData.password,
+      user.accountData.password,
+    );
+
+    if (!checkPassword) {
+      return null;
+    } else {
+      return user;
+    }
   }
   async updateConfirmationCode(email: string): Promise<string | null> {
     const newCode = uuidv4();

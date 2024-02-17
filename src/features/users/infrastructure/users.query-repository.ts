@@ -9,7 +9,6 @@ import { User, UserDocument } from '../domain/user.entity';
 import { Model } from 'mongoose';
 import { PaginatorModel } from '../../../common/models/paginator.input.model';
 import { PaginatorOutputModel } from '../../../common/models/paginator.output.model';
-import { PasswordRecoveryModel } from '../../auth/api/models/auth.input.model';
 import bcrypt from 'bcrypt';
 import { ObjectId } from 'mongodb';
 import { AuthMeOutputModel } from '../../auth/api/models/auth.output.model';

@@ -48,7 +48,7 @@ import { DevicesRepository } from './features/devices/infrastrucure/devices.repo
 import { AttemptsQueryRepository } from './features/auth/infrastructure/attempts.query-repository';
 import { AttemptsRepository } from './features/auth/infrastructure/attempts.repository';
 import { JwtService } from './application/jwt.service';
-import { EmailsAdapter } from './adapters/EmailsAdapter';
+import { EmailsAdapter } from './adapters/emails-adapter';
 import { EmailsManager } from './managers/emails-manager';
 import { CommentsRepository } from './features/comments/infrastructure/comments.repository';
 import { LikesRepository } from './features/likes/infrastructure/likes.repository';
@@ -56,6 +56,12 @@ import { LikesQueryRepository } from './features/likes/infrastructure/likes.quer
 import { CommentsService } from './features/comments/application/comments.service';
 import { Like, LikeEntity } from './features/likes/domain/like.entity';
 import { DeviceMiddleware } from './common/middlewares/device.middleware';
+import { AuthModule } from './modules/auth.module';
+import { UsersModule } from './modules/users.module';
+import { AuthController } from './features/auth/api/auth.controller';
+import { DevicesController } from './features/devices/api/security.controller';
+import { AuthService } from './features/auth/application/auth.service';
+import { DevicesService } from './features/devices/application/devices.service';
 dotenv.config();
 
 const mongoURI = process.env.MONGO_URL || 'mongodb://0.0.0.0:27017';
@@ -66,11 +72,13 @@ if (!mongoURI) {
 
 const servicesProviders = [
   AppService,
+  AuthService,
   BlogsService,
   PostsService,
   UsersService,
   CommentsService,
   JwtService,
+  DevicesService,
 ];
 
 const repositoriesProviders = [
@@ -106,6 +114,8 @@ const constraintsProviders = [
 
 @Module({
   imports: [
+    AuthModule,
+    UsersModule,
     MongooseModule.forRoot(mongoURI, {
       dbName: 'BloggerPlatform',
     }),
@@ -121,6 +131,8 @@ const constraintsProviders = [
   ],
   controllers: [
     AppController,
+    AuthController,
+    DevicesController,
     BlogsController,
     PostsController,
     CommentsController,

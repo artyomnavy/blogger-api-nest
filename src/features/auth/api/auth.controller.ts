@@ -1,12 +1,10 @@
 import { AuthService } from '../application/auth.service';
-import { UsersService } from '../../users/application/users.service';
 import { UsersQueryRepository } from '../../users/infrastructure/users.query-repository';
 import {
   Controller,
   HttpCode,
   Post,
   Body,
-  UnauthorizedException,
   Req,
   UseGuards,
   Res,
@@ -27,23 +25,23 @@ import { AttemptsGuard } from '../../../common/guards/attempts.guard';
 import { RecoveryPasswordAuthGuard } from '../../../common/guards/recovery-password-auth.guard';
 import { RefreshTokenAuthGuard } from '../../../common/guards/refresh-token-auth.guard';
 import { CreateUserModel } from '../../users/api/models/user.input.model';
-import { BearerAuthGuard } from '../../../common/guards/bearer-auth.guard';
 import { DevicesService } from '../../devices/application/devices.service';
 import { JwtService } from '../../../application/jwt.service';
+import { LocalAuthGuard } from '../../../common/guards/local-auth.gurad';
+import { JwtBearerAuthGuard } from '../../../common/guards/jwt-bearer-auth-guard.service';
+import { CurrentUserId } from '../../../common/decorators/current-user-id.param.decorator';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     protected authService: AuthService,
-    protected usersService: UsersService,
     protected usersQueryRepository: UsersQueryRepository,
     protected devicesService: DevicesService,
     protected jwtService: JwtService,
   ) {}
 
   @Post('/login')
-  @UseGuards(AttemptsGuard)
-  @HttpCode(HTTP_STATUSES.OK_200)
+  @UseGuards(AttemptsGuard, LocalAuthGuard)
   async loginUser(
     @Body() authData: AuthLoginModel,
     @Req() req: Request,
@@ -53,40 +51,34 @@ export class AuthController {
     const ip = req.ip! || 'unknown';
     const deviceName = req.headers['user-agent'] || 'unknown';
 
-    const user = await this.usersService.checkCredentials(authData);
+    const userId = req.userId!;
 
-    if (!user) {
-      throw new UnauthorizedException();
-    } else {
-      const userId = user._id.toString();
+    const accessToken = await this.jwtService.createAccessJWT(userId);
 
-      const accessToken = await this.jwtService.createAccessJWT(userId);
+    const refreshToken = await this.jwtService.createRefreshJWT(
+      deviceId,
+      userId,
+    );
 
-      const refreshToken = await this.jwtService.createRefreshJWT(
-        deviceId,
-        userId,
-      );
+    const payloadRefreshToken =
+      await this.jwtService.getPayloadByToken(refreshToken);
 
-      const payloadRefreshToken =
-        await this.jwtService.getPayloadByToken(refreshToken);
+    const iat = new Date(payloadRefreshToken.iat * 1000);
+    const exp = new Date(payloadRefreshToken.exp * 1000);
 
-      const iat = new Date(payloadRefreshToken.iat * 1000);
-      const exp = new Date(payloadRefreshToken.exp * 1000);
+    await this.devicesService.createDeviceSession({
+      iat,
+      exp,
+      ip,
+      deviceId,
+      deviceName,
+      userId,
+    });
 
-      await this.devicesService.createDeviceSession({
-        iat,
-        exp,
-        ip,
-        deviceId,
-        deviceName,
-        userId,
-      });
-
-      res
-        .cookie('refreshToken', refreshToken, { httpOnly: true, secure: true })
-        .send({ accessToken: accessToken });
-      return;
-    }
+    res
+      .cookie('refreshToken', refreshToken, { httpOnly: true, secure: true })
+      .send({ accessToken: accessToken });
+    return;
   }
 
   @Post('/password-recovery')
@@ -138,7 +130,6 @@ export class AuthController {
 
   @Post('/refresh-token')
   @UseGuards(RefreshTokenAuthGuard)
-  @HttpCode(HTTP_STATUSES.OK_200)
   async getNewPairTokens(@Req() req: Request, @Res() res: Response) {
     const userId = req.userId!;
     const deviceId = req.deviceId!;
@@ -246,12 +237,10 @@ export class AuthController {
     }
   }
   @Get('/me')
-  @UseGuards(BearerAuthGuard)
-  @HttpCode(HTTP_STATUSES.OK_200)
-  async getInfoAboutSelf(@Req() req: Request) {
-    const authMe = await this.usersQueryRepository.getUserByIdForAuthMe(
-      req.userId!,
-    );
+  @UseGuards(JwtBearerAuthGuard)
+  async getInfoAboutSelf(@CurrentUserId() currentUserId: string) {
+    const authMe =
+      await this.usersQueryRepository.getUserByIdForAuthMe(currentUserId);
 
     return authMe;
   }

@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { Injectable } from '@nestjs/common';
+import { jwtSecret } from './jwt.constants';
 
-const jwtSecret = process.env.JWT_SECRET || '123';
 @Injectable()
 export class JwtService {
   async createAccessJWT(userId: string) {
