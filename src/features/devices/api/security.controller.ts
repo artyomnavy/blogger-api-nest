@@ -12,7 +12,7 @@ export class DevicesController {
     protected devicesQueryRepository: DevicesQueryRepository,
   ) {}
 
-  @Get('/devices')
+  @Get('devices')
   async getAllDevicesSessionsForUser(@Req() req: Request) {
     const userId = req.userId!;
 
@@ -21,7 +21,7 @@ export class DevicesController {
 
     return devicesSessions;
   }
-  @Delete('/devices')
+  @Delete('devices')
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async terminateSessionsForAllOthersDevices(@Req() req: Request) {
     const userId = req.userId!;
@@ -35,7 +35,7 @@ export class DevicesController {
 
     if (isTerminateDevicesSessions) return;
   }
-  @Delete('/devices/:id')
+  @Delete('devices/:id')
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async terminateSessionForDevice(@Param('id', ObjectIdPipe) deviceId: string) {
     const isTerminateDeviceSessionById =

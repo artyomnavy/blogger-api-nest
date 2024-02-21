@@ -4,7 +4,7 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { BlogsQueryRepository } from '../../../features/blogs/infrastructure/blogs.query-repository';
 
 @ValidatorConstraint({ name: 'IsBlogExist', async: true })
@@ -16,7 +16,7 @@ export class BlogExistConstraint implements ValidatorConstraintInterface {
     const blog = await this.blogsQueryRepository.getBlogById(blogId);
 
     if (!blog) {
-      throw new Error('Blog is not exist');
+      throw new BadRequestException('Blog is not exist');
     }
 
     return true;

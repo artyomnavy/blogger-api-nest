@@ -38,7 +38,7 @@ export class CommentsController {
     }
   }
 
-  @Put('/:id/like-status')
+  @Put(':id/like-status')
   @UseGuards(JwtBearerAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async changeLikeStatusForComment(
@@ -62,7 +62,7 @@ export class CommentsController {
     if (isUpdated) return;
   }
 
-  @Put('/:id')
+  @Put(':id')
   @UseGuards(JwtBearerAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async updateComment(

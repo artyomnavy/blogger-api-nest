@@ -6,14 +6,19 @@ import { BlogOutputModel } from '../src/features/blogs/api/models/blog.output.mo
 import { PostOutputModel } from '../src/features/posts/api/models/post.output.model';
 import { HTTP_STATUSES, likesStatuses } from '../src/utils';
 import { appSettings } from '../src/app.settings';
-import { badId, login, password, Paths, responseNullData } from './test-utils';
+import { badId, Paths, responseNullData } from './utils/test-constants';
 import { CreateAndUpdateBlogModel } from '../src/features/blogs/api/models/blog.input.model';
 import { CreateAndUpdatePostModel } from '../src/features/posts/api/models/post.input.model';
-import { entitiesTestManager } from './test-manager';
+import { CreateEntitiesTestManager } from './utils/test-manager';
+import {
+  basicLogin,
+  basicPassword,
+} from '../src/features/auth/api/auth.constants';
 
 describe('Blogs testing (e2e)', () => {
   let app: INestApplication;
   let server;
+  let createEntitiesTestManager: CreateEntitiesTestManager;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -26,6 +31,8 @@ describe('Blogs testing (e2e)', () => {
 
     server = app.getHttpServer();
 
+    createEntitiesTestManager = new CreateEntitiesTestManager(app);
+
     await request(server)
       .delete(`${Paths.testing}/all-data`)
       .expect(HTTP_STATUSES.NO_CONTENT_204);
@@ -35,15 +42,17 @@ describe('Blogs testing (e2e)', () => {
   let newPost: PostOutputModel | null = null;
 
   it('+ GET all blogs database', async () => {
+    const queryData = {
+      searchNameTerm: '',
+      sortBy: '',
+      sortDirection: '',
+      pageNumber: '',
+      pageSize: '',
+    };
+
     const foundBlogs = await request(server)
       .get(Paths.blogs)
-      .query({
-        searchNameTerm: '',
-        sortBy: '',
-        sortDirection: '',
-        pageNumber: '',
-        pageSize: '',
-      })
+      .query(queryData)
       .expect(HTTP_STATUSES.OK_200);
 
     expect(foundBlogs.body).toStrictEqual(responseNullData);
@@ -56,12 +65,11 @@ describe('Blogs testing (e2e)', () => {
       websiteUrl: 'test@blog.com',
     };
 
-    await entitiesTestManager.createBlog(
+    await createEntitiesTestManager.createBlog(
       Paths.blogs,
       createData,
       'wrongLogin',
       'wrongPass',
-      server,
       HTTP_STATUSES.UNAUTHORIZED_401,
     );
 
@@ -79,12 +87,11 @@ describe('Blogs testing (e2e)', () => {
       websiteUrl: '',
     };
 
-    const errorsCreateBlog = await entitiesTestManager.createBlog(
+    const errorsCreateBlog = await createEntitiesTestManager.createBlog(
       Paths.blogs,
       createData,
-      login,
-      password,
-      server,
+      basicLogin,
+      basicPassword,
       HTTP_STATUSES.BAD_REQUEST_400,
     );
 
@@ -110,12 +117,11 @@ describe('Blogs testing (e2e)', () => {
       websiteUrl: 'https://website1.com',
     };
 
-    const createBlog = await entitiesTestManager.createBlog(
+    const createBlog = await createEntitiesTestManager.createBlog(
       Paths.blogs,
       createData,
-      login,
-      password,
-      server,
+      basicLogin,
+      basicPassword,
     );
 
     newBlog = createBlog.body;
@@ -129,15 +135,17 @@ describe('Blogs testing (e2e)', () => {
       isMembership: false,
     });
 
+    const queryData = {
+      searchNameTerm: '',
+      sortBy: '',
+      sortDirection: '',
+      pageNumber: '',
+      pageSize: '',
+    };
+
     const foundBlogs = await request(server)
       .get(Paths.blogs)
-      .query({
-        searchNameTerm: '',
-        sortBy: '',
-        sortDirection: '',
-        pageNumber: '',
-        pageSize: '',
-      })
+      .query(queryData)
       .expect(HTTP_STATUSES.OK_200);
 
     expect(foundBlogs.body).toStrictEqual({
@@ -150,26 +158,30 @@ describe('Blogs testing (e2e)', () => {
   });
 
   it('- GET all posts by incorrect blogId', async () => {
+    const queryData = {
+      pageNumber: '',
+      pageSize: '',
+      sortBy: '',
+      sortDirection: '',
+    };
+
     await request(server)
       .get(`${Paths.blogs}/${badId}/posts`)
-      .query({
-        pageNumber: '',
-        pageSize: '',
-        sortBy: '',
-        sortDirection: '',
-      })
+      .query(queryData)
       .expect(HTTP_STATUSES.NOT_FOUND_404);
   });
 
   it('+ GET all posts with correct blogId for blog', async () => {
+    const queryData = {
+      pageNumber: '',
+      pageSize: '',
+      sortBy: '',
+      sortDirection: '',
+    };
+
     const foundPosts = await request(server)
       .get(`${Paths.blogs}/${newBlog!.id}/posts`)
-      .query({
-        pageNumber: '',
-        pageSize: '',
-        sortBy: '',
-        sortDirection: '',
-      })
+      .query(queryData)
       .expect(HTTP_STATUSES.OK_200);
 
     expect(foundPosts.body).toStrictEqual(responseNullData);
@@ -182,14 +194,14 @@ describe('Blogs testing (e2e)', () => {
       content: '',
     };
 
-    const errorsCreatePostForBlog = await entitiesTestManager.createPostForBlog(
-      `${Paths.blogs}/${newBlog!.id}/posts`,
-      createData,
-      login,
-      password,
-      server,
-      HTTP_STATUSES.BAD_REQUEST_400,
-    );
+    const errorsCreatePostForBlog =
+      await createEntitiesTestManager.createPostForBlog(
+        `${Paths.blogs}/${newBlog!.id}/posts`,
+        createData,
+        basicLogin,
+        basicPassword,
+        HTTP_STATUSES.BAD_REQUEST_400,
+      );
 
     expect(errorsCreatePostForBlog.body).toStrictEqual({
       errorsMessages: [
@@ -219,12 +231,11 @@ describe('Blogs testing (e2e)', () => {
       content: 'New content 1',
     };
 
-    await entitiesTestManager.createPostForBlog(
+    await createEntitiesTestManager.createPostForBlog(
       `${Paths.blogs}/${badId}/posts`,
       createData,
-      login,
-      password,
-      server,
+      basicLogin,
+      basicPassword,
       HTTP_STATUSES.NOT_FOUND_404,
     );
 
@@ -242,12 +253,11 @@ describe('Blogs testing (e2e)', () => {
       content: 'New content 1',
     };
 
-    const createPost = await entitiesTestManager.createPostForBlog(
+    const createPost = await createEntitiesTestManager.createPostForBlog(
       `${Paths.blogs}/${newBlog!.id}/posts`,
       createData,
-      login,
-      password,
-      server,
+      basicLogin,
+      basicPassword,
     );
 
     newPost = createPost.body;
@@ -304,7 +314,7 @@ describe('Blogs testing (e2e)', () => {
 
     await request(server)
       .put(`${Paths.blogs}/${badId}`)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .send(updateData)
       .expect(HTTP_STATUSES.NOT_FOUND_404);
 
@@ -326,7 +336,7 @@ describe('Blogs testing (e2e)', () => {
 
     const errorsUpdateBlog = await request(server)
       .put(`${Paths.blogs}/${newBlog!.id}`)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .send(updateData)
       .expect(HTTP_STATUSES.BAD_REQUEST_400);
 
@@ -360,7 +370,7 @@ describe('Blogs testing (e2e)', () => {
 
     await request(server)
       .put(`${Paths.blogs}/${newBlog!.id}`)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .send(updateData)
       .expect(HTTP_STATUSES.NO_CONTENT_204);
 
@@ -381,7 +391,7 @@ describe('Blogs testing (e2e)', () => {
   it('- DELETE blog by ID with incorrect id', async () => {
     await request(server)
       .delete(`${Paths.blogs}/${badId}`)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .expect(HTTP_STATUSES.NOT_FOUND_404);
 
     const foundBlogs = await request(server)
@@ -400,7 +410,7 @@ describe('Blogs testing (e2e)', () => {
   it('+ DELETE blog by ID with correct id', async () => {
     await request(server)
       .delete(`${Paths.blogs}/${newBlog!.id}`)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .expect(HTTP_STATUSES.NO_CONTENT_204);
 
     const foundBlogs = await request(server)

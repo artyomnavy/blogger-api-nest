@@ -122,7 +122,10 @@ export class AuthService {
   }
   async sendEmailForPasswordRecovery(email: string, recoveryCode: string) {
     try {
-      await this.emailsManager.sendEmailWithRecoveryCode(email, recoveryCode);
+      await this.emailsManager.sendEmailReconfirmationMessage(
+        email,
+        recoveryCode,
+      );
     } catch (e) {
       console.error(e);
       return false;

@@ -5,11 +5,16 @@ import request from 'supertest';
 import { HTTP_STATUSES } from '../src/utils';
 import { UserOutputModel } from '../src/features/users/api/models/user.output.model';
 import { appSettings } from '../src/app.settings';
-import { badId, login, password, Paths, responseNullData } from './test-utils';
-import { entitiesTestManager } from './test-manager';
+import { badId, Paths, responseNullData } from './utils/test-constants';
+import { CreateEntitiesTestManager } from './utils/test-manager';
+import {
+  basicLogin,
+  basicPassword,
+} from '../src/features/auth/api/auth.constants';
 describe('Users testing (e2e)', () => {
   let app: INestApplication;
   let server;
+  let createEntitiesTestManager: CreateEntitiesTestManager;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -22,6 +27,8 @@ describe('Users testing (e2e)', () => {
 
     server = app.getHttpServer();
 
+    createEntitiesTestManager = new CreateEntitiesTestManager(app);
+
     await request(server)
       .delete(`${Paths.testing}/all-data`)
       .expect(HTTP_STATUSES.NO_CONTENT_204);
@@ -30,17 +37,19 @@ describe('Users testing (e2e)', () => {
   let newUser: UserOutputModel | null = null;
 
   it('+ GET all users database', async () => {
+    const queryData = {
+      sortBy: '',
+      sortDirection: '',
+      pageNumber: '',
+      pageSize: '',
+      searchLoginTerm: '',
+      searchEmailTerm: '',
+    };
+
     const foundUsers = await request(server)
       .get(Paths.users)
-      .auth(login, password)
-      .query({
-        sortBy: '',
-        sortDirection: '',
-        pageNumber: '',
-        pageSize: '',
-        searchLoginTerm: '',
-        searchEmailTerm: '',
-      })
+      .auth(basicLogin, basicPassword)
+      .query(queryData)
       .expect(HTTP_STATUSES.OK_200);
 
     expect(foundUsers.body).toStrictEqual(responseNullData);
@@ -49,12 +58,12 @@ describe('Users testing (e2e)', () => {
   it('- GET all users database with incorrect basicAuth data', async () => {
     await request(server)
       .get(Paths.users)
-      .auth('wrongLogin', password)
+      .auth('wrongLogin', basicPassword)
       .expect(HTTP_STATUSES.UNAUTHORIZED_401);
 
     const foundUsers = await request(server)
       .get(Paths.users)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .expect(HTTP_STATUSES.OK_200);
 
     expect(foundUsers.body).toStrictEqual(responseNullData);
@@ -67,12 +76,11 @@ describe('Users testing (e2e)', () => {
       email: 'test$test.com',
     };
 
-    const errorsCreateUser = await entitiesTestManager.createUserByAdmin(
+    const errorsCreateUser = await createEntitiesTestManager.createUserByAdmin(
       Paths.users,
       createData,
-      login,
-      password,
-      server,
+      basicLogin,
+      basicPassword,
       HTTP_STATUSES.BAD_REQUEST_400,
     );
 
@@ -86,7 +94,7 @@ describe('Users testing (e2e)', () => {
 
     const foundUsers = await request(server)
       .get(Paths.users)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .expect(HTTP_STATUSES.OK_200);
 
     expect(foundUsers.body).toStrictEqual(responseNullData);
@@ -99,26 +107,25 @@ describe('Users testing (e2e)', () => {
       email: 'test@test.com',
     };
 
-    const createUser = await entitiesTestManager.createUserByAdmin(
+    const createUser = await createEntitiesTestManager.createUserByAdmin(
       Paths.users,
       createData,
-      login,
-      password,
-      server,
+      basicLogin,
+      basicPassword,
     );
 
     newUser = createUser.body;
 
     expect(newUser).toEqual({
       id: expect.any(String),
-      login: 'login',
-      email: 'test@test.com',
+      login: createData.login,
+      email: createData.email,
       createdAt: expect.any(String),
     });
 
     const foundUsers = await request(server)
       .get(Paths.users)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .expect(HTTP_STATUSES.OK_200);
 
     expect(foundUsers.body).toStrictEqual({
@@ -133,12 +140,12 @@ describe('Users testing (e2e)', () => {
   it('- DELETE user by ID with incorrect id', async () => {
     await request(server)
       .delete(`${Paths.users}/${badId}`)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .expect(HTTP_STATUSES.NOT_FOUND_404);
 
     const foundUsers = await request(server)
       .get(Paths.users)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .expect(HTTP_STATUSES.OK_200);
 
     expect(foundUsers.body).toStrictEqual({
@@ -153,12 +160,12 @@ describe('Users testing (e2e)', () => {
   it('+ DELETE user by ID with correct id', async () => {
     await request(server)
       .delete(`${Paths.users}/${newUser!.id}`)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .expect(HTTP_STATUSES.NO_CONTENT_204);
 
     const foundUsers = await request(server)
       .get(Paths.users)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .expect(HTTP_STATUSES.OK_200);
 
     expect(foundUsers.body).toStrictEqual(responseNullData);

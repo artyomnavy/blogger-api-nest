@@ -19,7 +19,7 @@ export class LoginExistConstraint implements ValidatorConstraintInterface {
       return true;
     }
 
-    throw new Error('Login already exist');
+    return false;
   }
 }
 
@@ -47,7 +47,7 @@ export class EmailExistConstraint implements ValidatorConstraintInterface {
       return true;
     }
 
-    throw new Error('Email already exist');
+    return false;
   }
 }
 
@@ -72,13 +72,16 @@ export class RecoveryCodeConstraint implements ValidatorConstraintInterface {
     const user =
       await this.usersQueryRepository.getUserByConfirmationCode(recoveryCode);
 
-    if (!user) throw new Error('Recovery code is not exist');
+    if (!user) {
+      return false;
+    }
 
     if (
       user.emailConfirmation.expirationDate !== null &&
       user.emailConfirmation.expirationDate < new Date()
-    )
-      throw new Error('Recovery code expired');
+    ) {
+      return false;
+    }
 
     return true;
   }
@@ -109,14 +112,20 @@ export class CodeConfirmationConstraint
     const user =
       await this.usersQueryRepository.getUserByConfirmationCode(code);
 
-    if (!user) throw new Error('Code is not exist');
-    if (user.emailConfirmation.isConfirmed)
-      throw new Error('Code already been applied');
+    if (!user) {
+      return false;
+    }
+
+    if (user.emailConfirmation.isConfirmed) {
+      return false;
+    }
+
     if (
       user.emailConfirmation.expirationDate !== null &&
       user.emailConfirmation.expirationDate < new Date()
-    )
-      throw new Error('Code expired');
+    ) {
+      return false;
+    }
 
     return true;
   }
@@ -144,9 +153,13 @@ export class EmailExistAndConfirmedConstraint
   async validate(email: string): Promise<boolean> {
     const user = await this.usersQueryRepository.getUserByEmail(email);
 
-    if (!user) throw new Error('Email is not exist');
-    if (user!.emailConfirmation.isConfirmed)
-      throw new Error('Email is already confirmed');
+    if (!user) {
+      return false;
+    }
+
+    if (user!.emailConfirmation.isConfirmed) {
+      return false;
+    }
 
     return true;
   }

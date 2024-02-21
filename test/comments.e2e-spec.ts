@@ -6,12 +6,17 @@ import { HTTP_STATUSES, likesStatuses } from '../src/utils';
 import { BlogOutputModel } from '../src/features/blogs/api/models/blog.output.model';
 import { PostOutputModel } from '../src/features/posts/api/models/post.output.model';
 import { appSettings } from '../src/app.settings';
-import { badId, login, password, Paths, responseNullData } from './test-utils';
-import { entitiesTestManager } from './test-manager';
+import { badId, Paths, responseNullData } from './utils/test-constants';
+import { CreateEntitiesTestManager } from './utils/test-manager';
+import {
+  basicLogin,
+  basicPassword,
+} from '../src/features/auth/api/auth.constants';
 
 describe('Comments testing (e2e)', () => {
   let app: INestApplication;
   let server;
+  let createEntitiesTestManager: CreateEntitiesTestManager;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -23,6 +28,8 @@ describe('Comments testing (e2e)', () => {
     await app.init();
 
     server = app.getHttpServer();
+
+    createEntitiesTestManager = new CreateEntitiesTestManager(app);
 
     await request(server)
       .delete(`${Paths.testing}/all-data`)
@@ -40,12 +47,11 @@ describe('Comments testing (e2e)', () => {
       websiteUrl: 'https://website1.com',
     };
 
-    const createBlog = await entitiesTestManager.createBlog(
+    const createBlog = await createEntitiesTestManager.createBlog(
       Paths.blogs,
       createData,
-      login,
-      password,
-      server,
+      basicLogin,
+      basicPassword,
     );
 
     newBlog = createBlog.body;
@@ -81,21 +87,20 @@ describe('Comments testing (e2e)', () => {
       blogId: newBlog!.id,
     };
 
-    const createPost = await entitiesTestManager.createPost(
+    const createPost = await createEntitiesTestManager.createPost(
       Paths.posts,
       createData,
-      login,
-      password,
-      server,
+      basicLogin,
+      basicPassword,
     );
 
     newPost = createPost.body;
 
     expect(newPost).toEqual({
       id: expect.any(String),
-      title: 'New post 1',
-      shortDescription: 'New shortDescription 1',
-      content: 'New content 1',
+      title: createData.title,
+      shortDescription: createData.shortDescription,
+      content: createData.content,
       blogId: expect.any(String),
       blogName: expect.any(String),
       createdAt: expect.any(String),

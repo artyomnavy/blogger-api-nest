@@ -40,18 +40,20 @@ export class AuthController {
     protected jwtService: JwtService,
   ) {}
 
-  @Post('/login')
-  @UseGuards(AttemptsGuard, LocalAuthGuard)
+  @Post('login')
+  // @UseGuards(AttemptsGuard)
+  @UseGuards(LocalAuthGuard)
+  @HttpCode(HTTP_STATUSES.OK_200)
   async loginUser(
     @Body() authData: AuthLoginModel,
-    @Req() req: Request,
-    @Res() res: Response,
+    @Req() req,
+    @Res({ passthrough: true }) res: Response,
   ) {
     const deviceId = uuidv4();
     const ip = req.ip! || 'unknown';
     const deviceName = req.headers['user-agent'] || 'unknown';
 
-    const userId = req.userId!;
+    const userId = req.user._id.toString();
 
     const accessToken = await this.jwtService.createAccessJWT(userId);
 
@@ -75,14 +77,12 @@ export class AuthController {
       userId,
     });
 
-    res
-      .cookie('refreshToken', refreshToken, { httpOnly: true, secure: true })
-      .send({ accessToken: accessToken });
-    return;
+    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true });
+    return { accessToken: accessToken };
   }
 
-  @Post('/password-recovery')
-  @UseGuards(AttemptsGuard)
+  @Post('password-recovery')
+  // @UseGuards(AttemptsGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async sendEmailForRecoveryPassword(
     @Body() recoveryData: PasswordRecoveryModel,
@@ -114,8 +114,9 @@ export class AuthController {
     }
   }
 
-  @Post('/new-password')
-  @UseGuards(AttemptsGuard, RecoveryPasswordAuthGuard)
+  @Post('new-password')
+  // @UseGuards(AttemptsGuard)
+  @UseGuards(RecoveryPasswordAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async changePasswordForRecovery(
     @Body() recoveryData: NewPasswordRecoveryModel,
@@ -128,9 +129,13 @@ export class AuthController {
     if (isUpdate) return;
   }
 
-  @Post('/refresh-token')
+  @Post('refresh-token')
   @UseGuards(RefreshTokenAuthGuard)
-  async getNewPairTokens(@Req() req: Request, @Res() res: Response) {
+  @HttpCode(HTTP_STATUSES.OK_200)
+  async getNewPairTokens(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const userId = req.userId!;
     const deviceId = req.deviceId!;
 
@@ -162,19 +167,20 @@ export class AuthController {
     );
 
     if (isUpdateDeviceSession) {
-      res
-        .cookie('refreshToken', newRefreshToken, {
-          httpOnly: true,
-          secure: true,
-        })
-        .send({ accessToken: newAccessToken });
-      return;
+      res.cookie('refreshToken', newRefreshToken, {
+        httpOnly: true,
+        secure: true,
+      });
+      return { accessToken: newAccessToken };
     }
   }
-  @Post('/logout')
+  @Post('logout')
   @UseGuards(RefreshTokenAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
-  async logoutUser(@Req() req: Request, @Res() res: Response) {
+  async logoutUser(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const userId = req.userId!;
     const deviceId = req.deviceId!;
 
@@ -189,8 +195,8 @@ export class AuthController {
       return;
     }
   }
-  @Post('/registration')
-  @UseGuards(AttemptsGuard)
+  @Post('registration')
+  // @UseGuards(AttemptsGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async createUserByRegistration(@Body() createData: CreateUserModel) {
     const user = await this.authService.createUserByRegistration(createData);
@@ -203,16 +209,16 @@ export class AuthController {
 
     return;
   }
-  @Post('/registration-confirmation')
-  @UseGuards(AttemptsGuard)
+  @Post('registration-confirmation')
+  // @UseGuards(AttemptsGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async sendEmailForConfirmRegistration(@Body() confirmData: ConfirmCodeModel) {
     await this.authService.confirmEmail(confirmData.code);
 
     return;
   }
-  @Post('/registration-email-resending')
-  @UseGuards(AttemptsGuard)
+  @Post('registration-email-resending')
+  // @UseGuards(AttemptsGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async resendEmailForConfirmRegistration(
     @Body() confirmData: RegistrationEmailResendModel,
@@ -236,7 +242,7 @@ export class AuthController {
       return;
     }
   }
-  @Get('/me')
+  @Get('me')
   @UseGuards(JwtBearerAuthGuard)
   async getInfoAboutSelf(@CurrentUserId() currentUserId: string) {
     const authMe =

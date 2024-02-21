@@ -61,7 +61,6 @@ export class UsersQueryRepository {
 
     const users = await this.userModel
       .find(filter)
-      .lean()
       .sort({
         [sortBy]: sortDirection === 'desc' ? -1 : 1,
       })
@@ -153,7 +152,7 @@ export class UsersQueryRepository {
     }
   }
   async getUserByIdForAuthMe(id: string): Promise<AuthMeOutputModel | null> {
-    const user = await this.userModel.findOne({ _id: new ObjectId(id) }).lean();
+    const user = await this.userModel.findOne({ _id: new ObjectId(id) });
 
     if (!user) {
       return null;

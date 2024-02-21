@@ -6,12 +6,17 @@ import { PostOutputModel } from '../src/features/posts/api/models/post.output.mo
 import { BlogOutputModel } from '../src/features/blogs/api/models/blog.output.model';
 import { HTTP_STATUSES, likesStatuses } from '../src/utils';
 import { appSettings } from '../src/app.settings';
-import { badId, login, password, Paths, responseNullData } from './test-utils';
-import { entitiesTestManager } from './test-manager';
+import { badId, Paths, responseNullData } from './utils/test-constants';
+import { CreateEntitiesTestManager } from './utils/test-manager';
+import {
+  basicLogin,
+  basicPassword,
+} from '../src/features/auth/api/auth.constants';
 
 describe('Posts testing (e2e)', () => {
   let app: INestApplication;
   let server;
+  let createEntitiesTestManager: CreateEntitiesTestManager;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -23,6 +28,8 @@ describe('Posts testing (e2e)', () => {
     await app.init();
 
     server = app.getHttpServer();
+
+    createEntitiesTestManager = new CreateEntitiesTestManager(app);
 
     await request(server)
       .delete(`${Paths.testing}/all-data`)
@@ -48,12 +55,11 @@ describe('Posts testing (e2e)', () => {
       blogId: `${badId}`,
     };
 
-    await entitiesTestManager.createPost(
+    await createEntitiesTestManager.createPost(
       Paths.posts,
       createData,
       'wrongLogin',
       'wrongpass',
-      server,
       HTTP_STATUSES.UNAUTHORIZED_401,
     );
 
@@ -72,12 +78,11 @@ describe('Posts testing (e2e)', () => {
       blogId: `1`,
     };
 
-    const errorsCreatePost = await entitiesTestManager.createPost(
+    const errorsCreatePost = await createEntitiesTestManager.createPost(
       Paths.posts,
       createData,
-      login,
-      password,
-      server,
+      basicLogin,
+      basicPassword,
       HTTP_STATUSES.BAD_REQUEST_400,
     );
 
@@ -104,12 +109,11 @@ describe('Posts testing (e2e)', () => {
       websiteUrl: 'https://website1.com',
     };
 
-    const createBlog = await entitiesTestManager.createBlog(
+    const createBlog = await createEntitiesTestManager.createBlog(
       Paths.blogs,
       createData,
-      login,
-      password,
-      server,
+      basicLogin,
+      basicPassword,
     );
 
     newBlog = createBlog.body;
@@ -144,12 +148,11 @@ describe('Posts testing (e2e)', () => {
       blogId: newBlog!.id,
     };
 
-    const createPost = await entitiesTestManager.createPost(
+    const createPost = await createEntitiesTestManager.createPost(
       Paths.posts,
       createData,
-      login,
-      password,
-      server,
+      basicLogin,
+      basicPassword,
     );
 
     newPost = createPost.body;
@@ -207,7 +210,7 @@ describe('Posts testing (e2e)', () => {
 
     await request(server)
       .put(`${Paths.posts}/${badId}`)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .send(updateData)
       .expect(HTTP_STATUSES.NOT_FOUND_404);
 
@@ -234,7 +237,7 @@ describe('Posts testing (e2e)', () => {
 
     const errorsUpdatePost = await request(server)
       .put(`${Paths.posts}/${newPost!.id}`)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .send(updateData)
       .expect(HTTP_STATUSES.BAD_REQUEST_400);
 
@@ -270,7 +273,7 @@ describe('Posts testing (e2e)', () => {
 
     await request(server)
       .put(`${Paths.posts}/${newPost!.id}`)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .send(updateData)
       .expect(HTTP_STATUSES.NO_CONTENT_204);
 
@@ -290,7 +293,7 @@ describe('Posts testing (e2e)', () => {
   it('- DELETE post by ID with incorrect id', async () => {
     await request(server)
       .delete(`${Paths.posts}/${badId}`)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .expect(HTTP_STATUSES.NOT_FOUND_404);
 
     const foundPosts = await request(server)
@@ -309,7 +312,7 @@ describe('Posts testing (e2e)', () => {
   it('+ DELETE post by ID with correct id', async () => {
     await request(server)
       .delete(`${Paths.posts}/${newPost!.id}`)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .expect(HTTP_STATUSES.NO_CONTENT_204);
 
     const foundPosts = await request(server)

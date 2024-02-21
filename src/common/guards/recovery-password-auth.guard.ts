@@ -16,6 +16,10 @@ export class RecoveryPasswordAuthGuard implements CanActivate {
     const recoveryCode = req.body.recoveryCode;
     const newPassword = req.body.newPassword;
 
+    if (!recoveryCode || !newPassword) {
+      throw new UnauthorizedException();
+    }
+
     const isOldPassword =
       await this.usersQueryRepository.checkUserPasswordForRecovery(
         recoveryCode,

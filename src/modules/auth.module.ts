@@ -21,9 +21,9 @@ import {
 import { DevicesService } from '../features/devices/application/devices.service';
 import { DevicesRepository } from '../features/devices/infrastrucure/devices.repository';
 import { JwtModule } from '@nestjs/jwt';
-import { jwtSecret } from '../application/jwt.constants';
 import { JwtStrategy } from '../features/auth/api/strategies/jwt.strategy';
 import { BasicStrategy } from '../features/auth/api/strategies/basic.strategy';
+import { jwtSecret } from '../features/auth/api/auth.constants';
 
 const servicesProviders = [AuthService, JwtService, DevicesService];
 

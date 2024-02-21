@@ -7,17 +7,13 @@ import {
 } from '../../../../common/decorators/validators/user-validator.decorator';
 
 export class AuthLoginModel {
-  @Matches(/^[a-zA-Z0-9_-]{3,10}$/ || /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/, {
-    message: 'Invalid login or email pattern',
-  })
-  @Transform(({ value }) => value?.trim())
   @IsString()
+  @Transform(({ value }) => value?.trim())
   @IsNotEmpty()
   loginOrEmail: string;
 
-  @Length(6, 20, { message: 'Invalid password length' })
-  @Transform(({ value }) => value?.trim())
   @IsString()
+  @Transform(({ value }) => value?.trim())
   @IsNotEmpty()
   password: string;
 }
@@ -33,7 +29,9 @@ export class PasswordRecoveryModel {
 }
 
 export class NewPasswordRecoveryModel {
-  @CheckRecoveryCodeConfirmation()
+  @CheckRecoveryCodeConfirmation({
+    message: 'Recovery code is not exist or expired',
+  })
   @Transform(({ value }) => value?.trim())
   @IsString()
   @IsNotEmpty()
@@ -47,7 +45,9 @@ export class NewPasswordRecoveryModel {
 }
 
 export class ConfirmCodeModel {
-  @CheckCodeConfirmation()
+  @CheckCodeConfirmation({
+    message: 'Code is not exist or already been applied or expired',
+  })
   @Transform(({ value }) => value?.trim())
   @IsString()
   @IsNotEmpty()
@@ -55,7 +55,7 @@ export class ConfirmCodeModel {
 }
 
 export class RegistrationEmailResendModel {
-  @IsEmailExistAndConfirmed()
+  @IsEmailExistAndConfirmed({ message: 'Email is not exist or confirmed' })
   @Matches(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/, {
     message: 'Invalid email pattern',
   })

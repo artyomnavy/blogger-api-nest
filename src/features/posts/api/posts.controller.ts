@@ -77,7 +77,7 @@ export class PostsController {
 
     return newPost;
   }
-  @Post('/:id/comments')
+  @Post(':id/comments')
   @UseGuards(JwtBearerAuthGuard)
   @HttpCode(HTTP_STATUSES.CREATED_201)
   async createCommentForPost(
@@ -102,7 +102,7 @@ export class PostsController {
 
     return newComment;
   }
-  @Put('/:id/like-status')
+  @Put(':id/like-status')
   @UseGuards(JwtBearerAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async changeLikeStatusForPost(

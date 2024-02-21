@@ -4,11 +4,9 @@ export const Paths = {
   posts: '/posts',
   comments: '/comments',
   users: '/users',
+  auth: '/auth',
   testing: '/testing',
 };
-
-export const login = 'admin';
-export const password = 'qwerty';
 
 export const badId = new ObjectId().toString();
 

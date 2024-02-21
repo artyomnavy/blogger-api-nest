@@ -101,7 +101,7 @@ const queryRepositoriesProviders = [
   LikesQueryRepository,
 ];
 
-const emailsProviders = [EmailsAdapter, EmailsManager];
+const emailsProviders = [EmailsManager, EmailsAdapter];
 
 const constraintsProviders = [
   BlogExistConstraint,
