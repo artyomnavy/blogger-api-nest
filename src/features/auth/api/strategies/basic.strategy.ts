@@ -14,8 +14,10 @@ export class BasicStrategy extends PassportStrategy(Strategy) {
     password: string,
   ): Promise<boolean> => {
     if (basicLogin === username && basicPassword === password) {
+      console.log('authorized');
       return true;
     }
+    console.log(username, password);
     throw new UnauthorizedException();
   };
 }
