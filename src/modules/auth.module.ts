@@ -2,7 +2,6 @@ import { PassportModule } from '@nestjs/passport';
 import { Module } from '@nestjs/common';
 import { LocalStrategy } from '../features/auth/api/strategies/local.strategy';
 import { UsersModule } from './users.module';
-import { AuthService } from '../features/auth/application/auth.service';
 import { AttemptsRepository } from '../features/auth/infrastructure/attempts.repository';
 import { EmailsManager } from '../managers/emails-manager';
 import { EmailsAdapter } from '../adapters/emails-adapter';
@@ -18,14 +17,31 @@ import {
   DeviceSession,
   DeviceSessionEntity,
 } from '../features/devices/domain/device.entity';
-import { DevicesService } from '../features/devices/application/devices.service';
 import { DevicesRepository } from '../features/devices/infrastrucure/devices.repository';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from '../features/auth/api/strategies/jwt.strategy';
 import { BasicStrategy } from '../features/auth/api/strategies/basic.strategy';
 import { jwtSecret } from '../features/auth/api/auth.constants';
+import { CqrsModule } from '@nestjs/cqrs';
+import { UpdatePasswordForRecoveryUseCase } from '../features/auth/application/use-cases/update-password-for-recovery-user.use-case';
+import { SendEmailForPasswordRecoveryUseCase } from '../features/auth/application/use-cases/send-email-for-password-recovery-user.use-case';
+import { ResendingEmailUseCase } from '../features/auth/application/use-cases/re-sending-email-user.use-case';
+import { CreateUserByRegistrationUseCase } from '../features/auth/application/use-cases/create-user-by-registration.use-case';
+import { ConfirmEmailUseCase } from '../features/auth/application/use-cases/confirm-email-user.use-case';
+import { CheckCredentialsUseCase } from '../features/auth/application/use-cases/check-credentials-user.use-case';
+import { AddAttemptUseCase } from '../features/auth/application/use-cases/add-attempt-ip.use-case';
 
-const servicesProviders = [AuthService, JwtService, DevicesService];
+const servicesProviders = [JwtService];
+
+const authUseCases = [
+  UpdatePasswordForRecoveryUseCase,
+  SendEmailForPasswordRecoveryUseCase,
+  ResendingEmailUseCase,
+  CreateUserByRegistrationUseCase,
+  ConfirmEmailUseCase,
+  CheckCredentialsUseCase,
+  AddAttemptUseCase,
+];
 
 const repositoriesProviders = [AttemptsRepository, DevicesRepository];
 
@@ -46,6 +62,7 @@ const strategiesProviders = [LocalStrategy, JwtStrategy, BasicStrategy];
       { name: User.name, schema: UserEntity },
       { name: DeviceSession.name, schema: DeviceSessionEntity },
     ]),
+    CqrsModule,
     UsersModule,
     PassportModule,
     JwtModule.register({
@@ -54,6 +71,7 @@ const strategiesProviders = [LocalStrategy, JwtStrategy, BasicStrategy];
     }),
   ],
   providers: [
+    ...authUseCases,
     ...servicesProviders,
     ...repositoriesProviders,
     ...queryRepositoriesProviders,

@@ -9,7 +9,9 @@ import { DevicesQueryRepository } from '../../features/devices/infrastrucure/dev
 
 @Injectable()
 export class DeviceMiddleware implements NestMiddleware {
-  constructor(protected devicesQueryRepository: DevicesQueryRepository) {}
+  constructor(
+    private readonly devicesQueryRepository: DevicesQueryRepository,
+  ) {}
   async use(req: Request, res: Response, next: NextFunction) {
     const deviceId = req.params.id;
     const userId = req.userId;

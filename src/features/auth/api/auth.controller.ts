@@ -1,4 +1,3 @@
-import { AuthService } from '../application/auth.service';
 import { UsersQueryRepository } from '../../users/infrastructure/users.query-repository';
 import {
   Controller,
@@ -25,19 +24,24 @@ import { AttemptsGuard } from '../../../common/guards/attempts.guard';
 import { RecoveryPasswordAuthGuard } from '../../../common/guards/recovery-password-auth.guard';
 import { RefreshTokenAuthGuard } from '../../../common/guards/refresh-token-auth.guard';
 import { CreateUserModel } from '../../users/api/models/user.input.model';
-import { DevicesService } from '../../devices/application/devices.service';
-import { JwtService } from '../../../application/jwt.service';
 import { LocalAuthGuard } from '../../../common/guards/local-auth.gurad';
 import { JwtBearerAuthGuard } from '../../../common/guards/jwt-bearer-auth-guard.service';
 import { CurrentUserId } from '../../../common/decorators/current-user-id.param.decorator';
+import { CommandBus } from '@nestjs/cqrs';
+import { TerminateDeviceSessionByLogoutCommand } from '../../devices/application/use-cases/terminate-device-by-logout.use-case';
+import { UpdateDeviceSessionCommand } from '../../devices/application/use-cases/update-device.use-case';
+import { CreateDeviceSessionCommand } from '../../devices/application/use-cases/create-device.use-case';
+import { CreateUserByRegistrationCommand } from '../application/use-cases/create-user-by-registration.use-case';
+import { ConfirmEmailCommand } from '../application/use-cases/confirm-email-user.use-case';
+import { ResendingEmailCommand } from '../application/use-cases/re-sending-email-user.use-case';
+import { UpdatePasswordForRecoveryCommand } from '../application/use-cases/update-password-for-recovery-user.use-case';
+import { SendEmailForPasswordRecoveryCommand } from '../application/use-cases/send-email-for-password-recovery-user.use-case';
 
 @Controller('auth')
 export class AuthController {
   constructor(
-    protected authService: AuthService,
     protected usersQueryRepository: UsersQueryRepository,
-    protected devicesService: DevicesService,
-    protected jwtService: JwtService,
+    private readonly commandBus: CommandBus,
   ) {}
 
   @Post('login')
@@ -45,73 +49,52 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @HttpCode(HTTP_STATUSES.OK_200)
   async loginUser(
-    @Body() authData: AuthLoginModel,
+    @Body() authModel: AuthLoginModel,
     @Req() req,
     @Res({ passthrough: true }) res: Response,
   ) {
     const deviceId = uuidv4();
     const ip = req.ip! || 'unknown';
     const deviceName = req.headers['user-agent'] || 'unknown';
-
     const userId = req.user._id.toString();
 
-    const accessToken = await this.jwtService.createAccessJWT(userId);
-
-    const refreshToken = await this.jwtService.createRefreshJWT(
-      deviceId,
-      userId,
+    const deviceSession = await this.commandBus.execute(
+      new CreateDeviceSessionCommand(deviceId, ip, deviceName, userId),
     );
 
-    const payloadRefreshToken =
-      await this.jwtService.getPayloadByToken(refreshToken);
-
-    const iat = new Date(payloadRefreshToken.iat * 1000);
-    const exp = new Date(payloadRefreshToken.exp * 1000);
-
-    await this.devicesService.createDeviceSession({
-      iat,
-      exp,
-      ip,
-      deviceId,
-      deviceName,
-      userId,
-    });
-
-    res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true });
-    return { accessToken: accessToken };
+    if (deviceSession) {
+      res.cookie('refreshToken', deviceSession.refreshToken, {
+        httpOnly: true,
+        secure: true,
+      });
+      return { accessToken: deviceSession.accessToken };
+    }
   }
 
   @Post('password-recovery')
   // @UseGuards(AttemptsGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async sendEmailForRecoveryPassword(
-    @Body() recoveryData: PasswordRecoveryModel,
+    @Body() recoveryModel: PasswordRecoveryModel,
   ) {
     const user = await this.usersQueryRepository.getUserByEmail(
-      recoveryData.email,
+      recoveryModel.email,
     );
 
     if (!user) return;
 
-    const newCode = await this.authService.updateConfirmationCode(
-      recoveryData.email,
+    const isSend = await this.commandBus.execute(
+      new SendEmailForPasswordRecoveryCommand(recoveryModel.email),
     );
 
-    if (newCode) {
-      const isSend = await this.authService.sendEmailForPasswordRecovery(
-        recoveryData.email,
-        newCode,
+    if (!isSend) {
+      throw new HttpException(
+        "Recovery code don't sending to passed email address, try later",
+        HTTP_STATUSES.IM_A_TEAPOT_418,
       );
-
-      if (!isSend) {
-        throw new HttpException(
-          "Recovery code don't sending to passed email address, try later",
-          HTTP_STATUSES.IM_A_TEAPOT_418,
-        );
-      }
-
-      return;
     }
+
+    return;
   }
 
   @Post('new-password')
@@ -119,11 +102,13 @@ export class AuthController {
   @UseGuards(RecoveryPasswordAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async changePasswordForRecovery(
-    @Body() recoveryData: NewPasswordRecoveryModel,
+    @Body() recoveryModel: NewPasswordRecoveryModel,
   ) {
-    const isUpdate = await this.authService.updatePasswordForRecovery(
-      recoveryData.recoveryCode,
-      recoveryData.newPassword,
+    const isUpdate = await this.commandBus.execute(
+      new UpdatePasswordForRecoveryCommand(
+        recoveryModel.recoveryCode,
+        recoveryModel.newPassword,
+      ),
     );
 
     if (isUpdate) return;
@@ -138,40 +123,19 @@ export class AuthController {
   ) {
     const userId = req.userId!;
     const deviceId = req.deviceId!;
-
     const newIp = req.ip! || 'unknown';
     const newDeviceName = req.headers['user-agent'] || 'unknown';
 
-    const newAccessToken = await this.jwtService.createAccessJWT(userId);
-
-    const newRefreshToken = await this.jwtService.createRefreshJWT(
-      deviceId,
-      userId,
+    const newDeviceSession = await this.commandBus.execute(
+      new UpdateDeviceSessionCommand(userId, deviceId, newIp, newDeviceName),
     );
 
-    const newPayloadRefreshToken =
-      await this.jwtService.getPayloadByToken(newRefreshToken);
-
-    const newIat = new Date(newPayloadRefreshToken.iat * 1000);
-    const newExp = new Date(newPayloadRefreshToken.exp * 1000);
-
-    const isUpdateDeviceSession = await this.devicesService.updateDeviceSession(
-      {
-        iat: newIat,
-        exp: newExp,
-        ip: newIp,
-        deviceId: deviceId,
-        deviceName: newDeviceName,
-        userId: userId,
-      },
-    );
-
-    if (isUpdateDeviceSession) {
-      res.cookie('refreshToken', newRefreshToken, {
+    if (newDeviceSession) {
+      res.cookie('refreshToken', newDeviceSession.newRefreshToken, {
         httpOnly: true,
         secure: true,
       });
-      return { accessToken: newAccessToken };
+      return { accessToken: newDeviceSession.newAccessToken };
     }
   }
   @Post('logout')
@@ -184,11 +148,9 @@ export class AuthController {
     const userId = req.userId!;
     const deviceId = req.deviceId!;
 
-    const isTerminateDeviceSession =
-      await this.devicesService.terminateDeviceSessionByLogout(
-        deviceId,
-        userId,
-      );
+    const isTerminateDeviceSession = await this.commandBus.execute(
+      new TerminateDeviceSessionByLogoutCommand(deviceId, userId),
+    );
 
     if (isTerminateDeviceSession) {
       res.clearCookie('refreshToken');
@@ -198,8 +160,10 @@ export class AuthController {
   @Post('registration')
   // @UseGuards(AttemptsGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
-  async createUserByRegistration(@Body() createData: CreateUserModel) {
-    const user = await this.authService.createUserByRegistration(createData);
+  async createUserByRegistration(@Body() createModel: CreateUserModel) {
+    const user = await this.commandBus.execute(
+      new CreateUserByRegistrationCommand(createModel),
+    );
 
     if (!user)
       throw new HttpException(
@@ -212,8 +176,10 @@ export class AuthController {
   @Post('registration-confirmation')
   // @UseGuards(AttemptsGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
-  async sendEmailForConfirmRegistration(@Body() confirmData: ConfirmCodeModel) {
-    await this.authService.confirmEmail(confirmData.code);
+  async sendEmailForConfirmRegistration(
+    @Body() confirmModel: ConfirmCodeModel,
+  ) {
+    await this.commandBus.execute(new ConfirmEmailCommand(confirmModel.code));
 
     return;
   }
@@ -221,26 +187,19 @@ export class AuthController {
   // @UseGuards(AttemptsGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async resendEmailForConfirmRegistration(
-    @Body() confirmData: RegistrationEmailResendModel,
+    @Body() confirmModel: RegistrationEmailResendModel,
   ) {
-    const newCode = await this.authService.updateConfirmationCode(
-      confirmData.email,
+    const isResend = await this.commandBus.execute(
+      new ResendingEmailCommand(confirmModel.email),
     );
 
-    if (newCode) {
-      const isResend = await this.authService.resendingEmail(
-        confirmData.email,
-        newCode,
+    if (!isResend)
+      throw new HttpException(
+        "Recovery code don't sending to passed email address, try later",
+        HTTP_STATUSES.IM_A_TEAPOT_418,
       );
 
-      if (!isResend)
-        throw new HttpException(
-          "Recovery code don't sending to passed email address, try later",
-          HTTP_STATUSES.IM_A_TEAPOT_418,
-        );
-
-      return;
-    }
+    return;
   }
   @Get('me')
   @UseGuards(JwtBearerAuthGuard)

@@ -19,9 +19,7 @@ import { BlogsController } from './features/blogs/api/blogs.controller';
 import { PostsController } from './features/posts/api/posts.controller';
 import { CommentsController } from './features/comments/api/comments.controller';
 import { UsersController } from './features/users/api/users.controller';
-import { BlogsService } from './features/blogs/application/blogs.service';
 import { PostsService } from './features/posts/application/posts.service';
-import { UsersService } from './features/users/application/users.service';
 import { BlogsQueryRepository } from './features/blogs/infrastructure/blogs.query-repository';
 import { CommentsQueryRepository } from './features/comments/infrastructure/comments.query-repository';
 import { UsersQueryRepository } from './features/users/infrastructure/users.query-repository';
@@ -53,15 +51,38 @@ import { EmailsManager } from './managers/emails-manager';
 import { CommentsRepository } from './features/comments/infrastructure/comments.repository';
 import { LikesRepository } from './features/likes/infrastructure/likes.repository';
 import { LikesQueryRepository } from './features/likes/infrastructure/likes.query-repository';
-import { CommentsService } from './features/comments/application/comments.service';
 import { Like, LikeEntity } from './features/likes/domain/like.entity';
 import { DeviceMiddleware } from './common/middlewares/device.middleware';
 import { AuthModule } from './modules/auth.module';
 import { UsersModule } from './modules/users.module';
 import { AuthController } from './features/auth/api/auth.controller';
 import { DevicesController } from './features/devices/api/security.controller';
-import { AuthService } from './features/auth/application/auth.service';
-import { DevicesService } from './features/devices/application/devices.service';
+import { CqrsModule } from '@nestjs/cqrs';
+import { UpdatePasswordForRecoveryUseCase } from './features/auth/application/use-cases/update-password-for-recovery-user.use-case';
+import { SendEmailForPasswordRecoveryUseCase } from './features/auth/application/use-cases/send-email-for-password-recovery-user.use-case';
+import { ResendingEmailUseCase } from './features/auth/application/use-cases/re-sending-email-user.use-case';
+import { CreateUserByRegistrationUseCase } from './features/auth/application/use-cases/create-user-by-registration.use-case';
+import { ConfirmEmailUseCase } from './features/auth/application/use-cases/confirm-email-user.use-case';
+import { CheckCredentialsUseCase } from './features/auth/application/use-cases/check-credentials-user.use-case';
+import { AddAttemptUseCase } from './features/auth/application/use-cases/add-attempt-ip.use-case';
+import { UpdateBlogUseCase } from './features/blogs/application/use-cases/update-blog.use-case';
+import { DeleteBlogUseCase } from './features/blogs/application/use-cases/delete-blog.use-case';
+import { CreateBlogUseCase } from './features/blogs/application/use-cases/create-blog.use-case';
+import { UpdateCommentUseCase } from './features/comments/application/use-cases/update-comment.use-case';
+import { DeleteCommentUseCase } from './features/comments/application/use-cases/delete-comment.use-case';
+import { CreateCommentUseCase } from './features/comments/application/use-cases/create-comment.use-case';
+import { ChangeLikeStatusForCommentUseCase } from './features/comments/application/use-cases/change-like-status-comment.use-case';
+import { UpdateDeviceSessionUseCase } from './features/devices/application/use-cases/update-device.use-case';
+import { TerminateDeviceSessionByLogoutUseCase } from './features/devices/application/use-cases/terminate-device-by-logout.use-case';
+import { TerminateDeviceSessionByIdUseCase } from './features/devices/application/use-cases/terminate-device-by-id.use-case';
+import { TerminateAllOthersDevicesSessionsUseCase } from './features/devices/application/use-cases/terminate-all-other-devices.use-case';
+import { CreateDeviceSessionUseCase } from './features/devices/application/use-cases/create-device.use-case';
+import { UpdatePostUseCase } from './features/posts/application/use-cases/update-post.use-case';
+import { DeletePostUseCase } from './features/posts/application/use-cases/delete-post.use-case';
+import { ChangeLikeStatusForPostUseCase } from './features/posts/application/use-cases/change-like-status-for-post-use.case';
+import { DeleteUserUseCase } from './features/users/application/use-cases/delete-user.use-case';
+import { CreateUserByAdminUseCase } from './features/users/application/use-cases/create-user-by-admin.use-case';
+import { AccessTokenVerificationMiddleware } from './common/middlewares/access-token-verification.middleware';
 dotenv.config();
 
 const mongoURI = process.env.MONGO_URL || 'mongodb://0.0.0.0:27017';
@@ -70,16 +91,42 @@ if (!mongoURI) {
   throw new Error(`Url doesn't found`);
 }
 
-const servicesProviders = [
-  AppService,
-  AuthService,
-  BlogsService,
-  PostsService,
-  UsersService,
-  CommentsService,
-  JwtService,
-  DevicesService,
+const authUseCases = [
+  UpdatePasswordForRecoveryUseCase,
+  SendEmailForPasswordRecoveryUseCase,
+  ResendingEmailUseCase,
+  CreateUserByRegistrationUseCase,
+  ConfirmEmailUseCase,
+  CheckCredentialsUseCase,
+  AddAttemptUseCase,
 ];
+
+const blogsUseCases = [UpdateBlogUseCase, DeleteBlogUseCase, CreateBlogUseCase];
+
+const commentsUseCases = [
+  UpdateCommentUseCase,
+  DeleteCommentUseCase,
+  CreateCommentUseCase,
+  ChangeLikeStatusForCommentUseCase,
+];
+
+const devicesUseCases = [
+  UpdateDeviceSessionUseCase,
+  TerminateDeviceSessionByLogoutUseCase,
+  TerminateDeviceSessionByIdUseCase,
+  TerminateAllOthersDevicesSessionsUseCase,
+  CreateDeviceSessionUseCase,
+];
+
+const postsUseCases = [
+  UpdatePostUseCase,
+  DeletePostUseCase,
+  ChangeLikeStatusForPostUseCase,
+];
+
+const usersUseCases = [DeleteUserUseCase, CreateUserByAdminUseCase];
+
+const servicesProviders = [AppService, PostsService, JwtService];
 
 const repositoriesProviders = [
   BlogsRepository,
@@ -114,6 +161,7 @@ const constraintsProviders = [
 
 @Module({
   imports: [
+    CqrsModule,
     AuthModule,
     UsersModule,
     MongooseModule.forRoot(mongoURI, {
@@ -140,6 +188,12 @@ const constraintsProviders = [
     TestController,
   ],
   providers: [
+    ...authUseCases,
+    ...blogsUseCases,
+    ...commentsUseCases,
+    ...postsUseCases,
+    ...devicesUseCases,
+    ...usersUseCases,
     ...servicesProviders,
     ...repositoriesProviders,
     ...queryRepositoriesProviders,
@@ -149,9 +203,30 @@ const constraintsProviders = [
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(DeviceMiddleware).forRoutes({
-      path: 'security/devices/:id',
-      method: RequestMethod.DELETE,
-    });
+    consumer
+      .apply(DeviceMiddleware)
+      .forRoutes({
+        path: '/security/devices/:id',
+        method: RequestMethod.DELETE,
+      })
+      .apply(AccessTokenVerificationMiddleware)
+      .forRoutes(
+        {
+          path: '/comments/:id',
+          method: RequestMethod.GET,
+        },
+        {
+          path: '/posts/:id/comments',
+          method: RequestMethod.GET,
+        },
+        {
+          path: '/posts',
+          method: RequestMethod.GET,
+        },
+        {
+          path: '/posts/:id',
+          method: RequestMethod.GET,
+        },
+      );
   }
 }

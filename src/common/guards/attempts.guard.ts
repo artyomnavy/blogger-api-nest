@@ -6,15 +6,16 @@ import {
 } from '@nestjs/common';
 import { sub } from 'date-fns';
 import { AttemptsQueryRepository } from '../../features/auth/infrastructure/attempts.query-repository';
-import { AuthService } from '../../features/auth/application/auth.service';
 import { HTTP_STATUSES } from '../../utils';
 import { AttemptModel } from '../../features/auth/api/models/attempt.model';
+import { AddAttemptCommand } from '../../features/auth/application/use-cases/add-attempt-ip.use-case';
+import { CommandBus } from '@nestjs/cqrs';
 
 @Injectable()
 export class AttemptsGuard implements CanActivate {
   constructor(
-    protected attemptsQueryRepository: AttemptsQueryRepository,
-    protected authService: AuthService,
+    private readonly attemptsQueryRepository: AttemptsQueryRepository,
+    private readonly commandBus: CommandBus,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -46,7 +47,7 @@ export class AttemptsGuard implements CanActivate {
       date: new Date(),
     };
 
-    await this.authService.addAttempt(attempt);
+    await this.commandBus.execute(new AddAttemptCommand(attempt));
 
     return true;
   }

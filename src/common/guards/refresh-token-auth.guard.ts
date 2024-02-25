@@ -11,9 +11,9 @@ import { DevicesQueryRepository } from '../../features/devices/infrastrucure/dev
 @Injectable()
 export class RefreshTokenAuthGuard implements CanActivate {
   constructor(
-    protected jwtService: JwtService,
-    protected usersQueryRepository: UsersQueryRepository,
-    protected devicesQueryRepository: DevicesQueryRepository,
+    private readonly jwtService: JwtService,
+    private readonly usersQueryRepository: UsersQueryRepository,
+    private readonly devicesQueryRepository: DevicesQueryRepository,
   ) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();

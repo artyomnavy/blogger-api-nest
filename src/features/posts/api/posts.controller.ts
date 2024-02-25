@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { PostsService } from '../application/posts.service';
@@ -24,10 +25,15 @@ import { ObjectIdPipe } from '../../../common/pipes/object-id.pipe';
 import { BasicAuthGuard } from '../../../common/guards/basic-auth.guard';
 import { CreateAndUpdateCommentModel } from '../../comments/api/models/comment.input.model';
 import { UsersQueryRepository } from '../../users/infrastructure/users.query-repository';
-import { CommentsService } from '../../comments/application/comments.service';
 import { UpdateLikeModel } from '../../likes/api/models/like.input.model';
 import { JwtBearerAuthGuard } from '../../../common/guards/jwt-bearer-auth-guard.service';
 import { CurrentUserId } from '../../../common/decorators/current-user-id.param.decorator';
+import { CommandBus } from '@nestjs/cqrs';
+import { DeletePostCommand } from '../application/use-cases/delete-post.use-case';
+import { UpdatePostCommand } from '../application/use-cases/update-post.use-case';
+import { ChangeLikeStatusForPostCommand } from '../application/use-cases/change-like-status-for-post-use.case';
+import { CreateCommentCommand } from '../../comments/application/use-cases/create-comment.use-case';
+import { Request } from 'express';
 
 @Controller('posts')
 export class PostsController {
@@ -36,34 +42,41 @@ export class PostsController {
     protected postsQueryRepository: PostsQueryRepository,
     protected commentsQueryRepository: CommentsQueryRepository,
     protected usersQueryRepository: UsersQueryRepository,
-    protected commentsService: CommentsService,
+    private readonly commandBus: CommandBus,
   ) {}
   @Get(':id/comments')
   async getCommentsForPost(
     @Param('id', ObjectIdPipe) postId: string,
     @Query() query: PaginatorModel,
+    @Req() req: Request,
   ): Promise<PaginatorOutputModel<CommentOutputModel>> {
+    const userId = req.userId;
+
     const post = await this.postsQueryRepository.getPostById(postId);
 
     if (!post) {
       throw new NotFoundException('Post not found');
     }
 
-    const queryData: PaginatorModel & { postId: string } = {
-      ...query,
+    const comments = await this.commentsQueryRepository.getCommentsByPostId({
+      query,
       postId,
-    };
-
-    const comments =
-      await this.commentsQueryRepository.getCommentsByPostId(queryData);
+      userId,
+    });
 
     return comments;
   }
   @Get()
   async getAllPosts(
     @Query() query: PaginatorModel,
+    @Req() req: Request,
   ): Promise<PaginatorOutputModel<PostOutputModel>> {
-    const posts = await this.postsQueryRepository.getAllPosts(query);
+    const userId = req.userId;
+
+    const posts = await this.postsQueryRepository.getAllPosts({
+      query,
+      userId,
+    });
 
     return posts;
   }
@@ -93,11 +106,13 @@ export class PostsController {
 
     const userLogin = user!.login;
 
-    const newComment = await this.commentsService.createComment(
-      postId,
-      currentUserId,
-      userLogin,
-      createModel.content,
+    const newComment = await this.commandBus.execute(
+      new CreateCommentCommand(
+        postId,
+        currentUserId,
+        userLogin,
+        createModel.content,
+      ),
     );
 
     return newComment;
@@ -117,10 +132,12 @@ export class PostsController {
 
     if (!post) throw new NotFoundException('Post not found');
 
-    const isUpdated = await this.postsService.changeLikeStatusPostForUser(
-      currentUserId,
-      post,
-      updateData.likeStatus,
+    const isUpdated = await this.commandBus.execute(
+      new ChangeLikeStatusForPostCommand(
+        currentUserId,
+        post,
+        updateData.likeStatus,
+      ),
     );
 
     if (isUpdated) return;
@@ -128,8 +145,11 @@ export class PostsController {
   @Get(':id')
   async getPost(
     @Param('id', ObjectIdPipe) postId: string,
+    @Req() req: Request,
   ): Promise<PostOutputModel> {
-    const post = await this.postsQueryRepository.getPostById(postId);
+    const userId = req.userId;
+
+    const post = await this.postsQueryRepository.getPostById(postId, userId);
 
     if (!post) {
       throw new NotFoundException('Post not found');
@@ -150,7 +170,9 @@ export class PostsController {
       throw new NotFoundException('Post not found');
     }
 
-    const isUpdated = await this.postsService.updatePost(postId, updateModel);
+    const isUpdated = await this.commandBus.execute(
+      new UpdatePostCommand(postId, updateModel),
+    );
 
     if (isUpdated) {
       return;
@@ -160,7 +182,9 @@ export class PostsController {
   @UseGuards(BasicAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async deletePost(@Param('id', ObjectIdPipe) postId: string) {
-    const isDeleted = await this.postsService.deletePost(postId);
+    const isDeleted = await this.commandBus.execute(
+      new DeletePostCommand(postId),
+    );
 
     if (isDeleted) {
       return;

@@ -55,13 +55,13 @@ export class CreateEntitiesTestManager {
   async createUserByAdmin(
     uri: string,
     createData: CreateUserModel,
-    login: string,
-    password: string,
+    basicLogin: string,
+    basicPassword: string,
     statusCode: HttpStatusType = HTTP_STATUSES.CREATED_201,
   ) {
     const response = await request(this.app.getHttpServer())
       .post(uri)
-      .auth(login, password)
+      .auth(basicLogin, basicPassword)
       .send(createData)
       .expect(statusCode);
 

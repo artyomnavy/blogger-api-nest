@@ -16,13 +16,17 @@ export class PostsQueryRepository {
     protected likesQueryRepository: LikesQueryRepository,
   ) {}
   async getAllPosts(
-    queryData: PaginatorModel & { userId?: string | null },
+    queryData: { query: PaginatorModel } & { userId?: string | null },
   ): Promise<PaginatorOutputModel<PostOutputModel>> {
-    const pageNumber = queryData.pageNumber ? queryData.pageNumber : 1;
-    const pageSize = queryData.pageSize ? queryData.pageSize : 10;
-    const sortBy = queryData.sortBy ? queryData.sortBy : 'createdAt';
-    const sortDirection = queryData.sortDirection
-      ? queryData.sortDirection
+    const pageNumber = queryData.query.pageNumber
+      ? queryData.query.pageNumber
+      : 1;
+    const pageSize = queryData.query.pageSize ? queryData.query.pageSize : 10;
+    const sortBy = queryData.query.sortBy
+      ? queryData.query.sortBy
+      : 'createdAt';
+    const sortDirection = queryData.query.sortDirection
+      ? queryData.query.sortDirection
       : 'desc';
 
     const userId = queryData.userId;

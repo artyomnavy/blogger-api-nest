@@ -1,5 +1,3 @@
-import { BlogDocument } from '../../../blogs/domain/blog.entity';
-import { BlogOutputModel } from '../../../blogs/api/models/blog.output.model';
 import { DeviceSessionDocument } from '../../domain/device.entity';
 
 export class DeviceSessionModel {

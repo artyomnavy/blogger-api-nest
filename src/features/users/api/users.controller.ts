@@ -10,7 +10,6 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { UsersService } from '../application/users.service';
 import { UsersQueryRepository } from '../infrastructure/users.query-repository';
 import { CreateUserModel } from './models/user.input.model';
 import { PaginatorModel } from '../../../common/models/paginator.input.model';
@@ -19,12 +18,15 @@ import { UserOutputModel } from './models/user.output.model';
 import { HTTP_STATUSES } from '../../../utils';
 import { ObjectIdPipe } from '../../../common/pipes/object-id.pipe';
 import { BasicAuthGuard } from '../../../common/guards/basic-auth.guard';
+import { DeleteUserCommand } from '../application/use-cases/delete-user.use-case';
+import { CommandBus } from '@nestjs/cqrs';
+import { CreateUserByAdminCommand } from '../application/use-cases/create-user-by-admin.use-case';
 
 @Controller('users')
 export class UsersController {
   constructor(
-    protected usersService: UsersService,
     protected usersQueryRepository: UsersQueryRepository,
+    private readonly commandBus: CommandBus,
   ) {}
   @Get()
   @UseGuards(BasicAuthGuard)
@@ -41,7 +43,9 @@ export class UsersController {
   async createUserByAdmin(
     @Body() createModel: CreateUserModel,
   ): Promise<UserOutputModel> {
-    const newUser = await this.usersService.createUserByAdmin(createModel);
+    const newUser = await this.commandBus.execute(
+      new CreateUserByAdminCommand(createModel),
+    );
 
     return newUser;
   }
@@ -49,7 +53,9 @@ export class UsersController {
   @UseGuards(BasicAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async deleteUser(@Param('id', ObjectIdPipe) userId: string) {
-    const isDeleted = await this.usersService.deleteUser(userId);
+    const isDeleted = await this.commandBus.execute(
+      new DeleteUserCommand(userId),
+    );
 
     if (isDeleted) {
       return;

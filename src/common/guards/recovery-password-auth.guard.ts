@@ -8,7 +8,7 @@ import { UsersQueryRepository } from '../../features/users/infrastructure/users.
 
 @Injectable()
 export class RecoveryPasswordAuthGuard implements CanActivate {
-  constructor(protected usersQueryRepository: UsersQueryRepository) {}
+  constructor(private readonly usersQueryRepository: UsersQueryRepository) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest();

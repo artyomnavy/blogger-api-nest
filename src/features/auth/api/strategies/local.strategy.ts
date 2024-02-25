@@ -1,25 +1,24 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { Strategy } from 'passport-local';
 import { PassportStrategy } from '@nestjs/passport';
-import { AuthService } from '../../application/auth.service';
+import { CheckCredentialsCommand } from '../../application/use-cases/check-credentials-user.use-case';
+import { CommandBus } from '@nestjs/cqrs';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly authService: AuthService) {
+  constructor(private readonly commandBus: CommandBus) {
     super({
       usernameField: 'loginOrEmail',
     });
   }
 
   async validate(loginOrEmail: string, password: string): Promise<any> {
-    const user = await this.authService.checkCredentials({
-      loginOrEmail,
-      password,
-    });
+    const user = await this.commandBus.execute(
+      new CheckCredentialsCommand({
+        loginOrEmail,
+        password,
+      }),
+    );
 
     if (!user) {
       throw new UnauthorizedException();
