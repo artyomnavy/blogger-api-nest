@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { BlogsQueryRepository } from '../infrastructure/blogs.query-repository';
@@ -27,6 +28,7 @@ import { CreateBlogCommand } from '../application/use-cases/create-blog.use-case
 import { CommandBus } from '@nestjs/cqrs';
 import { DeleteBlogCommand } from '../application/use-cases/delete-blog.use-case';
 import { UpdateBlogCommand } from '../application/use-cases/update-blog.use-case';
+import { Request } from 'express';
 
 @Controller('blogs')
 export class BlogsController {
@@ -61,21 +63,21 @@ export class BlogsController {
   async getPostsForBlog(
     @Param('id', ObjectIdPipe) blogId: string,
     @Query() query: PaginatorModel,
+    @Req() req: Request,
   ): Promise<PaginatorOutputModel<PostOutputModel>> {
+    const userId = req.userId;
+
     const blog = await this.blogsQueryRepository.getBlogById(blogId);
 
     if (!blog) {
       throw new NotFoundException('Blog not found');
     }
 
-    const queryData: PaginatorModel & {
-      blogId: string;
-    } = {
-      ...query,
+    const posts = await this.postsQueryRepository.getPostsByBlogId({
+      query,
       blogId,
-    };
-
-    const posts = await this.postsQueryRepository.getPostsByBlogId(queryData);
+      userId,
+    });
 
     return posts;
   }

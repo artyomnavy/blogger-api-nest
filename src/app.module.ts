@@ -227,6 +227,10 @@ export class AppModule implements NestModule {
           path: '/posts/:id',
           method: RequestMethod.GET,
         },
+        {
+          path: '/blogs/:id/posts',
+          method: RequestMethod.GET,
+        },
       );
   }
 }
