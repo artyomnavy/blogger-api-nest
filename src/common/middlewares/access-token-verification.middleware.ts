@@ -16,7 +16,7 @@ export class AccessTokenVerificationMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction) {
     const auth = req.headers.authorization;
 
-    if (!auth) {
+    if (!auth || auth.split(' ')[0] !== 'Bearer') {
       req.userId = null;
       next();
       return;
