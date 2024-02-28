@@ -5,6 +5,7 @@ export const Paths = {
   comments: '/comments',
   users: '/users',
   auth: '/auth',
+  security: '/security',
   testing: '/testing',
 };
 

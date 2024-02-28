@@ -67,7 +67,7 @@ const strategiesProviders = [LocalStrategy, JwtStrategy, BasicStrategy];
     PassportModule,
     JwtModule.register({
       secret: jwtSecret,
-      signOptions: { expiresIn: '10m' },
+      signOptions: { expiresIn: '10s' },
     }),
   ],
   providers: [

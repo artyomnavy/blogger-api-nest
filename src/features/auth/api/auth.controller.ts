@@ -20,7 +20,6 @@ import {
 } from './models/auth.input.model';
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { AttemptsGuard } from '../../../common/guards/attempts.guard';
 import { RecoveryPasswordAuthGuard } from '../../../common/guards/recovery-password-auth.guard';
 import { RefreshTokenAuthGuard } from '../../../common/guards/refresh-token-auth.guard';
 import { CreateUserModel } from '../../users/api/models/user.input.model';
@@ -36,6 +35,7 @@ import { ConfirmEmailCommand } from '../application/use-cases/confirm-email-user
 import { ResendingEmailCommand } from '../application/use-cases/re-sending-email-user.use-case';
 import { UpdatePasswordForRecoveryCommand } from '../application/use-cases/update-password-for-recovery-user.use-case';
 import { SendEmailForPasswordRecoveryCommand } from '../application/use-cases/send-email-for-password-recovery-user.use-case';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
@@ -45,7 +45,7 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  // @UseGuards(AttemptsGuard)
+  @UseGuards(ThrottlerGuard)
   @UseGuards(LocalAuthGuard)
   @HttpCode(HTTP_STATUSES.OK_200)
   async loginUser(
@@ -72,7 +72,7 @@ export class AuthController {
   }
 
   @Post('password-recovery')
-  // @UseGuards(AttemptsGuard)
+  @UseGuards(ThrottlerGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async sendEmailForRecoveryPassword(
     @Body() recoveryModel: PasswordRecoveryModel,
@@ -98,7 +98,7 @@ export class AuthController {
   }
 
   @Post('new-password')
-  // @UseGuards(AttemptsGuard)
+  @UseGuards(ThrottlerGuard)
   @UseGuards(RecoveryPasswordAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async changePasswordForRecovery(
@@ -158,7 +158,7 @@ export class AuthController {
     }
   }
   @Post('registration')
-  // @UseGuards(AttemptsGuard)
+  @UseGuards(ThrottlerGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async createUserByRegistration(@Body() createModel: CreateUserModel) {
     const user = await this.commandBus.execute(
@@ -174,7 +174,7 @@ export class AuthController {
     return;
   }
   @Post('registration-confirmation')
-  // @UseGuards(AttemptsGuard)
+  @UseGuards(ThrottlerGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async sendEmailForConfirmRegistration(
     @Body() confirmModel: ConfirmCodeModel,
@@ -184,7 +184,7 @@ export class AuthController {
     return;
   }
   @Post('registration-email-resending')
-  // @UseGuards(AttemptsGuard)
+  @UseGuards(ThrottlerGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async resendEmailForConfirmRegistration(
     @Body() confirmModel: RegistrationEmailResendModel,

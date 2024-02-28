@@ -6,12 +6,12 @@ import { jwtSecret } from '../features/auth/api/auth.constants';
 @Injectable()
 export class JwtService {
   async createAccessJWT(userId: string) {
-    const accessToken = jwt.sign({ userId }, jwtSecret, { expiresIn: '10m' });
+    const accessToken = jwt.sign({ userId }, jwtSecret, { expiresIn: '10s' });
     return accessToken;
   }
   async createRefreshJWT(deviceId: string, userId: string) {
     const refreshToken = jwt.sign({ deviceId, userId }, jwtSecret, {
-      expiresIn: '20m',
+      expiresIn: '20s',
     });
     return refreshToken;
   }

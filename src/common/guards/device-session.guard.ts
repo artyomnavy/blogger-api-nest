@@ -1,29 +1,34 @@
 import {
-  ForbiddenException,
   Injectable,
-  NestMiddleware,
+  CanActivate,
+  ExecutionContext,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
-import { NextFunction, Request, Response } from 'express';
 import { DevicesQueryRepository } from '../../features/devices/infrastrucure/devices.query-repository';
 
 @Injectable()
-export class DeviceMiddleware implements NestMiddleware {
+export class DeviceSessionGuard implements CanActivate {
   constructor(
     private readonly devicesQueryRepository: DevicesQueryRepository,
   ) {}
-  async use(req: Request, res: Response, next: NextFunction) {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const req = context.switchToHttp().getRequest();
+
     const deviceId = req.params.id;
     const userId = req.userId;
 
     const deviceSession =
       await this.devicesQueryRepository.getDeviceSessionById(deviceId);
 
-    if (!deviceSession) throw new NotFoundException('Device session not found');
+    if (!deviceSession) {
+      throw new NotFoundException('Device session not found');
+    }
 
-    if (userId !== deviceSession.userId)
+    if (userId !== deviceSession.userId) {
       throw new ForbiddenException("Device session other user's");
+    }
 
-    next();
+    return true;
   }
 }

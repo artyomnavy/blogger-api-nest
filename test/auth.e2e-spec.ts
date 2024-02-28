@@ -354,66 +354,76 @@ describe('Auth testing (e2e)', () => {
   });
 
   // CHECK ATTEMPTS FROM ONE IP
-  // it('- POST login user with more than 5 attempts from one IP-address during 10 seconds', async () => {
-  //   const createData = {
-  //     login: 'user',
-  //     password: 'user123',
-  //     email: 'user@test.com',
-  //   };
-  //
-  //   const authData = {
-  //     loginOrEmail: createData.login,
-  //     password: createData.password,
-  //   };
-  //
-  //   await request(server)
-  //     .post(`${Paths.users}`)
-  //     .auth(basicLogin, basicPassword)
-  //     .send(createData)
-  //     .expect(HTTP_STATUSES.CREATED_201);
-  //
-  //   await request(server)
-  //     .post(`${Paths.auth}/login`)
-  //     .send(authData)
-  //     .set('X-Forwarded-For', '1.1.1.1')
-  //     .set('Remote-Addr', '1.1.1.1')
-  //     .expect(HTTP_STATUSES.OK_200);
-  //
-  //   await request(server)
-  //     .post(`${Paths.auth}/login`)
-  //     .send(authData)
-  //     .set('X-Forwarded-For', '1.1.1.1')
-  //     .set('Remote-Addr', '1.1.1.1')
-  //     .expect(HTTP_STATUSES.OK_200);
-  //
-  //   await request(server)
-  //     .post(`${Paths.auth}/login`)
-  //     .send(authData)
-  //     .set('X-Forwarded-For', '1.1.1.1')
-  //     .set('Remote-Addr', '1.1.1.1')
-  //     .expect(HTTP_STATUSES.OK_200);
-  //
-  //   await request(server)
-  //     .post(`${Paths.auth}/login`)
-  //     .send(authData)
-  //     .set('X-Forwarded-For', '1.1.1.1')
-  //     .set('Remote-Addr', '1.1.1.1')
-  //     .expect(HTTP_STATUSES.OK_200);
-  //
-  //   await request(server)
-  //     .post(`${Paths.auth}/login`)
-  //     .send(authData)
-  //     .set('X-Forwarded-For', '1.1.1.1')
-  //     .set('Remote-Addr', '1.1.1.1')
-  //     .expect(HTTP_STATUSES.OK_200);
-  //
-  //   await request(server)
-  //     .post(`${Paths.auth}/login`)
-  //     .send(authData)
-  //     .set('X-Forwarded-For', '1.1.1.1')
-  //     .set('Remote-Addr', '1.1.1.1')
-  //     .expect(HTTP_STATUSES.TOO_MANY_REQUESTS_429);
-  // });
+  it('- POST login user with more than 5 attempts from one IP-address during 10 seconds', async () => {
+    // Create user
+    const createData = {
+      login: 'user',
+      password: 'user123',
+      email: 'user@test.com',
+    };
+
+    const authData = {
+      loginOrEmail: createData.login,
+      password: createData.password,
+    };
+
+    const createUserByAdmin = await createEntitiesTestManager.createUserByAdmin(
+      Paths.users,
+      createData,
+      basicLogin,
+      basicPassword,
+    );
+
+    expect(createUserByAdmin.body).toEqual({
+      id: expect.any(String),
+      login: createData.login,
+      email: createData.email,
+      createdAt: expect.any(String),
+    });
+
+    // Check ip-restriction
+    await request(server)
+      .post(`${Paths.auth}/login`)
+      .send(authData)
+      .set('X-Forwarded-For', '1.1.1.1')
+      .set('Remote-Addr', '1.1.1.1')
+      .expect(HTTP_STATUSES.OK_200);
+
+    await request(server)
+      .post(`${Paths.auth}/login`)
+      .send(authData)
+      .set('X-Forwarded-For', '1.1.1.1')
+      .set('Remote-Addr', '1.1.1.1')
+      .expect(HTTP_STATUSES.OK_200);
+
+    await request(server)
+      .post(`${Paths.auth}/login`)
+      .send(authData)
+      .set('X-Forwarded-For', '1.1.1.1')
+      .set('Remote-Addr', '1.1.1.1')
+      .expect(HTTP_STATUSES.OK_200);
+
+    await request(server)
+      .post(`${Paths.auth}/login`)
+      .send(authData)
+      .set('X-Forwarded-For', '1.1.1.1')
+      .set('Remote-Addr', '1.1.1.1')
+      .expect(HTTP_STATUSES.OK_200);
+
+    await request(server)
+      .post(`${Paths.auth}/login`)
+      .send(authData)
+      .set('X-Forwarded-For', '1.1.1.1')
+      .set('Remote-Addr', '1.1.1.1')
+      .expect(HTTP_STATUSES.OK_200);
+
+    await request(server)
+      .post(`${Paths.auth}/login`)
+      .send(authData)
+      .set('X-Forwarded-For', '1.1.1.1')
+      .set('Remote-Addr', '1.1.1.1')
+      .expect(HTTP_STATUSES.TOO_MANY_REQUESTS_429);
+  });
 
   // CHECK RECOVERY PASSWORD
 

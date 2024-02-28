@@ -5,7 +5,7 @@ import { ObjectId } from 'mongodb';
 export class ObjectIdPipe implements PipeTransform {
   transform(id: string) {
     if (!ObjectId.isValid(id)) {
-      throw new NotFoundException();
+      throw new NotFoundException('Invalid id pattern');
     }
 
     return id;

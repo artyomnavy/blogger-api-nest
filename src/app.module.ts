@@ -52,7 +52,6 @@ import { CommentsRepository } from './features/comments/infrastructure/comments.
 import { LikesRepository } from './features/likes/infrastructure/likes.repository';
 import { LikesQueryRepository } from './features/likes/infrastructure/likes.query-repository';
 import { Like, LikeEntity } from './features/likes/domain/like.entity';
-import { DeviceMiddleware } from './common/middlewares/device.middleware';
 import { AuthModule } from './modules/auth.module';
 import { UsersModule } from './modules/users.module';
 import { AuthController } from './features/auth/api/auth.controller';
@@ -83,6 +82,8 @@ import { ChangeLikeStatusForPostUseCase } from './features/posts/application/use
 import { DeleteUserUseCase } from './features/users/application/use-cases/delete-user.use-case';
 import { CreateUserByAdminUseCase } from './features/users/application/use-cases/create-user-by-admin.use-case';
 import { AccessTokenVerificationMiddleware } from './common/middlewares/access-token-verification.middleware';
+import { ThrottlerModule } from '@nestjs/throttler';
+
 dotenv.config();
 
 const mongoURI = process.env.MONGO_URL || 'mongodb://0.0.0.0:27017';
@@ -176,6 +177,12 @@ const constraintsProviders = [
       { name: DeviceSession.name, schema: DeviceSessionEntity },
       { name: Like.name, schema: LikeEntity },
     ]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 10000,
+        limit: 6,
+      },
+    ]),
   ],
   controllers: [
     AppController,
@@ -203,34 +210,27 @@ const constraintsProviders = [
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(DeviceMiddleware)
-      .forRoutes({
-        path: '/security/devices/:id',
-        method: RequestMethod.DELETE,
-      })
-      .apply(AccessTokenVerificationMiddleware)
-      .forRoutes(
-        {
-          path: '/comments/:id',
-          method: RequestMethod.GET,
-        },
-        {
-          path: '/posts/:id/comments',
-          method: RequestMethod.GET,
-        },
-        {
-          path: '/posts',
-          method: RequestMethod.GET,
-        },
-        {
-          path: '/posts/:id',
-          method: RequestMethod.GET,
-        },
-        {
-          path: '/blogs/:id/posts',
-          method: RequestMethod.GET,
-        },
-      );
+    consumer.apply(AccessTokenVerificationMiddleware).forRoutes(
+      {
+        path: '/comments/:id',
+        method: RequestMethod.GET,
+      },
+      {
+        path: '/posts/:id/comments',
+        method: RequestMethod.GET,
+      },
+      {
+        path: '/posts',
+        method: RequestMethod.GET,
+      },
+      {
+        path: '/posts/:id',
+        method: RequestMethod.GET,
+      },
+      {
+        path: '/blogs/:id/posts',
+        method: RequestMethod.GET,
+      },
+    );
   }
 }
