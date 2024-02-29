@@ -81,14 +81,6 @@ describe('Devices testing (e2e)', () => {
     title5: 'device5',
   };
 
-  // const ips = {
-  //   ip1: '1.1.1.1',
-  //   ip2: '2.2.2.2',
-  //   ip3: '3.3.3.3',
-  //   ip4: '4.4.4.4',
-  //   ip5: '5.5.5.5',
-  // };
-
   let refreshTokenForUser2: string | null = null;
 
   // CREATE USER1
@@ -130,8 +122,6 @@ describe('Devices testing (e2e)', () => {
         password: createUserData[0].password,
       })
       .set('User-Agent', userAgent.title1)
-      // .set('X-Forwarded-For', ips.ip1)
-      // .set('Remote-Addr', ips.ip1)
       .expect(HTTP_STATUSES.OK_200);
 
     refreshToken1 = deviceSession1.headers['set-cookie'][0]
@@ -150,8 +140,6 @@ describe('Devices testing (e2e)', () => {
         password: createUserData[0].password,
       })
       .set('User-Agent', userAgent.title2)
-      // .set('X-Forwarded-For', ips.ip2)
-      // .set('Remote-Addr', ips.ip2)
       .expect(HTTP_STATUSES.OK_200);
 
     refreshToken2 = deviceSession2.headers['set-cookie'][0]
@@ -170,8 +158,6 @@ describe('Devices testing (e2e)', () => {
         password: createUserData[0].password,
       })
       .set('User-Agent', userAgent.title3)
-      // .set('X-Forwarded-For', ips.ip3)
-      // .set('Remote-Addr', ips.ip3)
       .expect(HTTP_STATUSES.OK_200);
 
     refreshToken3 = deviceSession3.headers['set-cookie'][0]
@@ -190,8 +176,6 @@ describe('Devices testing (e2e)', () => {
         password: createUserData[0].password,
       })
       .set('User-Agent', userAgent.title4)
-      // .set('X-Forwarded-For', ips.ip4)
-      // .set('Remote-Addr', ips.ip4)
       .expect(HTTP_STATUSES.OK_200);
 
     refreshToken4 = deviceSession4.headers['set-cookie'][0]
@@ -244,8 +228,6 @@ describe('Devices testing (e2e)', () => {
         password: createUserData[1].password,
       })
       .set('User-Agent', userAgent.title5)
-      // .set('X-Forwarded-For', ips.ip5)
-      // .set('Remote-Addr', ips.ip5)
       .expect(HTTP_STATUSES.OK_200);
 
     refreshTokenForUser2 = deviceSessionForUser2.headers['set-cookie'][0]
@@ -275,8 +257,6 @@ describe('Devices testing (e2e)', () => {
       .post(`${Paths.auth}/refresh-token`)
       .set('Cookie', [`refreshToken=${refreshToken1}`])
       .set('User-Agent', userAgent.title1)
-      // .set('X-Forwarded-For', ips.ip1)
-      // .set('Remote-Addr', ips.ip1)
       .expect(HTTP_STATUSES.OK_200);
 
     refreshToken1 = updateTokens.headers['set-cookie'][0]
@@ -300,28 +280,24 @@ describe('Devices testing (e2e)', () => {
   it('+ GET all devices sessions with refresh token)', async () => {
     const devicesSessions = [
       {
-        // ip: ips.ip1,
         ip: expect.any(String),
         title: userAgent.title1,
         lastActiveDate: new Date(payload1.iat * 1000).toISOString(),
         deviceId: payload1.deviceId,
       },
       {
-        // ip: ips.ip2,
         ip: expect.any(String),
         title: userAgent.title2,
         lastActiveDate: new Date(payload2.iat * 1000).toISOString(),
         deviceId: payload2.deviceId,
       },
       {
-        // ip: ips.ip3,
         ip: expect.any(String),
         title: userAgent.title3,
         lastActiveDate: new Date(payload3.iat * 1000).toISOString(),
         deviceId: payload3.deviceId,
       },
       {
-        // ip: ips.ip4,
         ip: expect.any(String),
         title: userAgent.title4,
         lastActiveDate: new Date(payload4.iat * 1000).toISOString(),
@@ -341,21 +317,18 @@ describe('Devices testing (e2e)', () => {
   it('+ DELETE deviceSession2 by id with correct data', async () => {
     const devicesSessions = [
       {
-        // ip: ips.ip1,
         ip: expect.any(String),
         title: userAgent.title1,
         lastActiveDate: new Date(payload1.iat * 1000).toISOString(),
         deviceId: payload1.deviceId,
       },
       {
-        // ip: ips.ip3,
         ip: expect.any(String),
         title: userAgent.title3,
         lastActiveDate: new Date(payload3.iat * 1000).toISOString(),
         deviceId: payload3.deviceId,
       },
       {
-        // ip: ips.ip4,
         ip: expect.any(String),
         title: userAgent.title4,
         lastActiveDate: new Date(payload4.iat * 1000).toISOString(),
@@ -380,14 +353,12 @@ describe('Devices testing (e2e)', () => {
   it('+ POST logout device3 with correct data', async () => {
     const devicesSessions = [
       {
-        // ip: ips.ip1,
         ip: expect.any(String),
         title: userAgent.title1,
         lastActiveDate: new Date(payload1.iat * 1000).toISOString(),
         deviceId: payload1.deviceId,
       },
       {
-        // ip: ips.ip4,
         ip: expect.any(String),
         title: userAgent.title4,
         lastActiveDate: new Date(payload4.iat * 1000).toISOString(),
@@ -412,7 +383,6 @@ describe('Devices testing (e2e)', () => {
   it('+ DELETE all others devices sessions with correct data', async () => {
     const devicesSessions = [
       {
-        // ip: ips.ip1,
         ip: expect.any(String),
         title: userAgent.title1,
         lastActiveDate: new Date(payload1.iat * 1000).toISOString(),

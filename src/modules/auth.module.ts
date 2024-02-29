@@ -2,13 +2,11 @@ import { PassportModule } from '@nestjs/passport';
 import { Module } from '@nestjs/common';
 import { LocalStrategy } from '../features/auth/api/strategies/local.strategy';
 import { UsersModule } from './users.module';
-import { AttemptsRepository } from '../features/auth/infrastructure/attempts.repository';
 import { EmailsManager } from '../managers/emails-manager';
 import { EmailsAdapter } from '../adapters/emails-adapter';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Attempt, AttemptEntity } from '../features/auth/domain/attempt.entity';
 import { AuthController } from '../features/auth/api/auth.controller';
-import { AttemptsQueryRepository } from '../features/auth/infrastructure/attempts.query-repository';
 import { UsersQueryRepository } from '../features/users/infrastructure/users.query-repository';
 import { User, UserEntity } from '../features/users/domain/user.entity';
 import { JwtService } from '../application/jwt.service';
@@ -29,7 +27,6 @@ import { ResendingEmailUseCase } from '../features/auth/application/use-cases/re
 import { CreateUserByRegistrationUseCase } from '../features/auth/application/use-cases/create-user-by-registration.use-case';
 import { ConfirmEmailUseCase } from '../features/auth/application/use-cases/confirm-email-user.use-case';
 import { CheckCredentialsUseCase } from '../features/auth/application/use-cases/check-credentials-user.use-case';
-import { AddAttemptUseCase } from '../features/auth/application/use-cases/add-attempt-ip.use-case';
 
 const servicesProviders = [JwtService];
 
@@ -40,13 +37,11 @@ const authUseCases = [
   CreateUserByRegistrationUseCase,
   ConfirmEmailUseCase,
   CheckCredentialsUseCase,
-  AddAttemptUseCase,
 ];
 
-const repositoriesProviders = [AttemptsRepository, DevicesRepository];
+const repositoriesProviders = [DevicesRepository];
 
 const queryRepositoriesProviders = [
-  AttemptsQueryRepository,
   UsersQueryRepository,
   DevicesQueryRepository,
 ];

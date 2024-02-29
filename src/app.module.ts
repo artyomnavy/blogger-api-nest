@@ -43,8 +43,6 @@ import {
 } from './features/devices/domain/device.entity';
 import { DevicesQueryRepository } from './features/devices/infrastrucure/devices.query-repository';
 import { DevicesRepository } from './features/devices/infrastrucure/devices.repository';
-import { AttemptsQueryRepository } from './features/auth/infrastructure/attempts.query-repository';
-import { AttemptsRepository } from './features/auth/infrastructure/attempts.repository';
 import { JwtService } from './application/jwt.service';
 import { EmailsAdapter } from './adapters/emails-adapter';
 import { EmailsManager } from './managers/emails-manager';
@@ -63,7 +61,6 @@ import { ResendingEmailUseCase } from './features/auth/application/use-cases/re-
 import { CreateUserByRegistrationUseCase } from './features/auth/application/use-cases/create-user-by-registration.use-case';
 import { ConfirmEmailUseCase } from './features/auth/application/use-cases/confirm-email-user.use-case';
 import { CheckCredentialsUseCase } from './features/auth/application/use-cases/check-credentials-user.use-case';
-import { AddAttemptUseCase } from './features/auth/application/use-cases/add-attempt-ip.use-case';
 import { UpdateBlogUseCase } from './features/blogs/application/use-cases/update-blog.use-case';
 import { DeleteBlogUseCase } from './features/blogs/application/use-cases/delete-blog.use-case';
 import { CreateBlogUseCase } from './features/blogs/application/use-cases/create-blog.use-case';
@@ -99,7 +96,6 @@ const authUseCases = [
   CreateUserByRegistrationUseCase,
   ConfirmEmailUseCase,
   CheckCredentialsUseCase,
-  AddAttemptUseCase,
 ];
 
 const blogsUseCases = [UpdateBlogUseCase, DeleteBlogUseCase, CreateBlogUseCase];
@@ -134,7 +130,6 @@ const repositoriesProviders = [
   PostsRepository,
   UsersRepository,
   DevicesRepository,
-  AttemptsRepository,
   CommentsRepository,
   LikesRepository,
 ];
@@ -145,7 +140,6 @@ const queryRepositoriesProviders = [
   UsersQueryRepository,
   PostsQueryRepository,
   DevicesQueryRepository,
-  AttemptsQueryRepository,
   LikesQueryRepository,
 ];
 
