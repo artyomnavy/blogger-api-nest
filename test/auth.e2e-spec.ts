@@ -415,13 +415,6 @@ describe('Auth testing (e2e)', () => {
       .send(authData)
       .set('X-Forwarded-For', '1.1.1.1')
       .set('Remote-Addr', '1.1.1.1')
-      .expect(HTTP_STATUSES.OK_200);
-
-    await request(server)
-      .post(`${Paths.auth}/login`)
-      .send(authData)
-      .set('X-Forwarded-For', '1.1.1.1')
-      .set('Remote-Addr', '1.1.1.1')
       .expect(HTTP_STATUSES.TOO_MANY_REQUESTS_429);
   });
 

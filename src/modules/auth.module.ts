@@ -68,7 +68,7 @@ const strategiesProviders = [LocalStrategy, JwtStrategy, BasicStrategy];
     ThrottlerModule.forRoot([
       {
         ttl: 10000,
-        limit: 6,
+        limit: 5,
       },
     ]),
   ],
