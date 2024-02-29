@@ -79,7 +79,6 @@ import { ChangeLikeStatusForPostUseCase } from './features/posts/application/use
 import { DeleteUserUseCase } from './features/users/application/use-cases/delete-user.use-case';
 import { CreateUserByAdminUseCase } from './features/users/application/use-cases/create-user-by-admin.use-case';
 import { AccessTokenVerificationMiddleware } from './common/middlewares/access-token-verification.middleware';
-import { ThrottlerModule } from '@nestjs/throttler';
 
 dotenv.config();
 
@@ -170,12 +169,6 @@ const constraintsProviders = [
       { name: Attempt.name, schema: AttemptEntity },
       { name: DeviceSession.name, schema: DeviceSessionEntity },
       { name: Like.name, schema: LikeEntity },
-    ]),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 10000,
-        limit: 6,
-      },
     ]),
   ],
   controllers: [

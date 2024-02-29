@@ -27,6 +27,7 @@ import { ResendingEmailUseCase } from '../features/auth/application/use-cases/re
 import { CreateUserByRegistrationUseCase } from '../features/auth/application/use-cases/create-user-by-registration.use-case';
 import { ConfirmEmailUseCase } from '../features/auth/application/use-cases/confirm-email-user.use-case';
 import { CheckCredentialsUseCase } from '../features/auth/application/use-cases/check-credentials-user.use-case';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 const servicesProviders = [JwtService];
 
@@ -64,6 +65,12 @@ const strategiesProviders = [LocalStrategy, JwtStrategy, BasicStrategy];
       secret: jwtSecret,
       signOptions: { expiresIn: '10s' },
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 10000,
+        limit: 6,
+      },
+    ]),
   ],
   providers: [
     ...authUseCases,
