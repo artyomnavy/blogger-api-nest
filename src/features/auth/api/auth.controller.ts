@@ -45,8 +45,7 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  @UseGuards(ThrottlerGuard)
-  @UseGuards(LocalAuthGuard)
+  @UseGuards(ThrottlerGuard, LocalAuthGuard)
   @HttpCode(HTTP_STATUSES.OK_200)
   async loginUser(
     @Body() authModel: AuthLoginModel,
@@ -98,8 +97,7 @@ export class AuthController {
   }
 
   @Post('new-password')
-  @UseGuards(ThrottlerGuard)
-  @UseGuards(RecoveryPasswordAuthGuard)
+  @UseGuards(ThrottlerGuard, RecoveryPasswordAuthGuard)
   @HttpCode(HTTP_STATUSES.NO_CONTENT_204)
   async changePasswordForRecovery(
     @Body() recoveryModel: NewPasswordRecoveryModel,
