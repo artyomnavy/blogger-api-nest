@@ -52,15 +52,8 @@ import { LikesQueryRepository } from './features/likes/infrastructure/likes.quer
 import { Like, LikeEntity } from './features/likes/domain/like.entity';
 import { AuthModule } from './modules/auth.module';
 import { UsersModule } from './modules/users.module';
-import { AuthController } from './features/auth/api/auth.controller';
 import { DevicesController } from './features/devices/api/security.controller';
 import { CqrsModule } from '@nestjs/cqrs';
-import { UpdatePasswordForRecoveryUseCase } from './features/auth/application/use-cases/update-password-for-recovery-user.use-case';
-import { SendEmailForPasswordRecoveryUseCase } from './features/auth/application/use-cases/send-email-for-password-recovery-user.use-case';
-import { ResendingEmailUseCase } from './features/auth/application/use-cases/re-sending-email-user.use-case';
-import { CreateUserByRegistrationUseCase } from './features/auth/application/use-cases/create-user-by-registration.use-case';
-import { ConfirmEmailUseCase } from './features/auth/application/use-cases/confirm-email-user.use-case';
-import { CheckCredentialsUseCase } from './features/auth/application/use-cases/check-credentials-user.use-case';
 import { UpdateBlogUseCase } from './features/blogs/application/use-cases/update-blog.use-case';
 import { DeleteBlogUseCase } from './features/blogs/application/use-cases/delete-blog.use-case';
 import { CreateBlogUseCase } from './features/blogs/application/use-cases/create-blog.use-case';
@@ -87,15 +80,6 @@ const mongoURI = process.env.MONGO_URL || 'mongodb://0.0.0.0:27017';
 if (!mongoURI) {
   throw new Error(`Url doesn't found`);
 }
-
-const authUseCases = [
-  UpdatePasswordForRecoveryUseCase,
-  SendEmailForPasswordRecoveryUseCase,
-  ResendingEmailUseCase,
-  CreateUserByRegistrationUseCase,
-  ConfirmEmailUseCase,
-  CheckCredentialsUseCase,
-];
 
 const blogsUseCases = [UpdateBlogUseCase, DeleteBlogUseCase, CreateBlogUseCase];
 
@@ -173,7 +157,6 @@ const constraintsProviders = [
   ],
   controllers: [
     AppController,
-    AuthController,
     DevicesController,
     BlogsController,
     PostsController,
@@ -182,7 +165,6 @@ const constraintsProviders = [
     TestController,
   ],
   providers: [
-    ...authUseCases,
     ...blogsUseCases,
     ...commentsUseCases,
     ...postsUseCases,
