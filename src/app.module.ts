@@ -36,7 +36,6 @@ import {
   LoginExistConstraint,
   RecoveryCodeConstraint,
 } from './common/decorators/validators/user-validator.decorator';
-import { Attempt, AttemptEntity } from './features/auth/domain/attempt.entity';
 import {
   DeviceSession,
   DeviceSessionEntity,
@@ -150,7 +149,6 @@ const constraintsProviders = [
       { name: Post.name, schema: PostEntity },
       { name: Comment.name, schema: CommentEntity },
       { name: User.name, schema: UserEntity },
-      { name: Attempt.name, schema: AttemptEntity },
       { name: DeviceSession.name, schema: DeviceSessionEntity },
       { name: Like.name, schema: LikeEntity },
     ]),

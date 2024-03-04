@@ -5,7 +5,6 @@ import { UsersModule } from './users.module';
 import { EmailsManager } from '../managers/emails-manager';
 import { EmailsAdapter } from '../adapters/emails-adapter';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Attempt, AttemptEntity } from '../features/auth/domain/attempt.entity';
 import { AuthController } from '../features/auth/api/auth.controller';
 import { UsersQueryRepository } from '../features/users/infrastructure/users.query-repository';
 import { User, UserEntity } from '../features/users/domain/user.entity';
@@ -54,7 +53,6 @@ const strategiesProviders = [LocalStrategy, JwtStrategy, BasicStrategy];
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: Attempt.name, schema: AttemptEntity },
       { name: User.name, schema: UserEntity },
       { name: DeviceSession.name, schema: DeviceSessionEntity },
     ]),
